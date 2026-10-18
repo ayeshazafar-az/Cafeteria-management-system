@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'student_shops_screen.dart';
+import 'checkout_screen.dart';
 
 class MenuItemModel {
   final String id;
@@ -229,10 +230,14 @@ class _ShopDetailScreenState extends State<ShopDetailScreen> {
                         ),
                       ),
                       onPressed: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(
-                              'Order placed for PKR ${totalPrice.toStringAsFixed(0)}!',
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => CheckoutScreen(
+                              shopName: widget.shop.name,
+                              cart: cart,
+                              dynamicMenuItems: mockMenuItems,
+                              totalPrice: totalPrice,
                             ),
                           ),
                         );
