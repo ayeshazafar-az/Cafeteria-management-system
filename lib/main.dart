@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'core/theme/app_theme.dart';
 import 'features/auth/screens/auth_screen.dart';
 
 void main() {
@@ -11,15 +12,9 @@ class CafeteriaApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Cafeteria Management System',
+      title: 'Campus Cafeteria',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF1E88E5),
-          primary: const Color(0xFF1E88E5),
-        ),
-        useMaterial3: true,
-      ),
+      theme: AppTheme.lightTheme,
       home: const AuthScreen(),
     );
   }
