@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import '../../../core/constants/app_colors.dart';
+import 'global_search_screen.dart';
 import 'shop_detail_screen.dart';
 
 class Shop {
   final String id;
   final String name;
-  final String category; // Main tag e.g. Fast Food, Snacks, Drinks, Desi
+  final String category;
   final double rating;
   final bool isOpen;
   final IconData icon;
@@ -28,9 +29,7 @@ class StudentShopsScreen extends StatefulWidget {
 }
 
 class _StudentShopsScreenState extends State<StudentShopsScreen> {
-  final TextEditingController _searchController = TextEditingController();
   String _selectedCategory = 'All';
-  String _searchQuery = '';
 
   final List<String> _categories = const [
     'All',
@@ -76,24 +75,13 @@ class _StudentShopsScreenState extends State<StudentShopsScreen> {
   ];
 
   List<Shop> get _filteredShops {
-    return _allShops.where((shop) {
-      final matchesCategory =
-          _selectedCategory == 'All' ||
-          shop.category.toLowerCase() == _selectedCategory.toLowerCase();
-
-      final matchesQuery =
-          _searchQuery.isEmpty ||
-          shop.name.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-          shop.category.toLowerCase().contains(_searchQuery.toLowerCase());
-
-      return matchesCategory && matchesQuery;
-    }).toList();
-  }
-
-  @override
-  void dispose() {
-    _searchController.dispose();
-    super.dispose();
+    if (_selectedCategory == 'All') return _allShops;
+    return _allShops
+        .where(
+          (shop) =>
+              shop.category.toLowerCase() == _selectedCategory.toLowerCase(),
+        )
+        .toList();
   }
 
   @override
@@ -116,46 +104,43 @@ class _StudentShopsScreenState extends State<StudentShopsScreen> {
       ),
       body: Column(
         children: [
-          // Search & Filter Header Container
+          // Search Bar & Filter Header
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
             child: Column(
               children: [
-                // Search Bar
-                TextField(
-                  controller: _searchController,
-                  onChanged: (val) {
-                    setState(() {
-                      _searchQuery = val;
-                    });
+                InkWell(
+                  borderRadius: BorderRadius.circular(14),
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const GlobalSearchScreen(),
+                      ),
+                    );
                   },
-                  decoration: InputDecoration(
-                    hintText: 'Search stalls, burgers, chai...',
-                    prefixIcon: const Icon(
-                      Icons.search,
-                      color: AppColors.textSecondary,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
                     ),
-                    suffixIcon: _searchQuery.isNotEmpty
-                        ? IconButton(
-                            icon: const Icon(Icons.clear, size: 20),
-                            onPressed: () {
-                              _searchController.clear();
-                              setState(() {
-                                _searchQuery = '';
-                              });
-                            },
-                          )
-                        : null,
-                    filled: true,
-                    fillColor: Colors.white,
-                    contentPadding: const EdgeInsets.symmetric(vertical: 12),
-                    border: OutlineInputBorder(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
                       borderRadius: BorderRadius.circular(14),
-                      borderSide: BorderSide.none,
+                      border: Border.all(color: Colors.grey.shade200),
                     ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(14),
-                      borderSide: BorderSide(color: Colors.grey.shade200),
+                    child: Row(
+                      children: const [
+                        Icon(Icons.search, color: AppColors.textSecondary),
+                        SizedBox(width: 12),
+                        Text(
+                          'Search dishes, tea, biryani...',
+                          style: TextStyle(
+                            color: AppColors.textSecondary,
+                            fontSize: 14,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ),
@@ -211,145 +196,120 @@ class _StudentShopsScreenState extends State<StudentShopsScreen> {
             ),
           ),
 
-          // Stall List View
+          // Stall List
           Expanded(
-            child: _filteredShops.isEmpty
-                ? Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.search_off_rounded,
-                          size: 60,
-                          color: Colors.grey.shade400,
-                        ),
-                        const SizedBox(height: 12),
-                        const Text(
-                          'No stalls found',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.textSecondary,
-                          ),
-                        ),
-                      ],
-                    ),
-                  )
-                : ListView.builder(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    itemCount: _filteredShops.length,
-                    itemBuilder: (context, index) {
-                      final shop = _filteredShops[index];
+            child: ListView.builder(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              itemCount: _filteredShops.length,
+              itemBuilder: (context, index) {
+                final shop = _filteredShops[index];
 
-                      return Card(
-                        margin: const EdgeInsets.only(bottom: 14),
-                        child: InkWell(
-                          borderRadius: BorderRadius.circular(16),
-                          onTap: shop.isOpen
-                              ? () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) =>
-                                          ShopDetailScreen(shop: shop),
-                                    ),
-                                  );
-                                }
-                              : null,
-                          child: Padding(
-                            padding: const EdgeInsets.all(16),
-                            child: Row(
+                return Card(
+                  margin: const EdgeInsets.only(bottom: 14),
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(16),
+                    onTap: shop.isOpen
+                        ? () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) =>
+                                    ShopDetailScreen(shop: shop),
+                              ),
+                            );
+                          }
+                        : null,
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: shop.isOpen
+                                  ? AppColors.primaryLight
+                                  : Colors.grey.shade100,
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                            child: Icon(
+                              shop.icon,
+                              size: 32,
+                              color: shop.isOpen
+                                  ? AppColors.primary
+                                  : Colors.grey,
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Container(
-                                  padding: const EdgeInsets.all(12),
-                                  decoration: BoxDecoration(
+                                Text(
+                                  shop.name,
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
                                     color: shop.isOpen
-                                        ? AppColors.primaryLight
-                                        : Colors.grey.shade100,
-                                    borderRadius: BorderRadius.circular(14),
-                                  ),
-                                  child: Icon(
-                                    shop.icon,
-                                    size: 32,
-                                    color: shop.isOpen
-                                        ? AppColors.primary
+                                        ? AppColors.textPrimary
                                         : Colors.grey,
                                   ),
                                 ),
-                                const SizedBox(width: 16),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        shop.name,
-                                        style: TextStyle(
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.bold,
-                                          color: shop.isOpen
-                                              ? AppColors.textPrimary
-                                              : Colors.grey,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 4),
-                                      Text(
-                                        shop.category,
-                                        style: const TextStyle(
-                                          fontSize: 12,
-                                          color: AppColors.textSecondary,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 6),
-                                      Row(
-                                        children: [
-                                          const Icon(
-                                            Icons.star_rounded,
-                                            size: 18,
-                                            color: Colors.amber,
-                                          ),
-                                          const SizedBox(width: 4),
-                                          Text(
-                                            '${shop.rating}',
-                                            style: const TextStyle(
-                                              fontSize: 13,
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ],
+                                const SizedBox(height: 4),
+                                Text(
+                                  shop.category,
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    color: AppColors.textSecondary,
                                   ),
                                 ),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 10,
-                                    vertical: 4,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: shop.isOpen
-                                        ? Colors.green.shade50
-                                        : Colors.red.shade50,
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  child: Text(
-                                    shop.isOpen ? 'OPEN' : 'CLOSED',
-                                    style: TextStyle(
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.bold,
-                                      color: shop.isOpen
-                                          ? Colors.green
-                                          : Colors.red,
+                                const SizedBox(height: 6),
+                                Row(
+                                  children: [
+                                    const Icon(
+                                      Icons.star_rounded,
+                                      size: 18,
+                                      color: Colors.amber,
                                     ),
-                                  ),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      '${shop.rating}',
+                                      style: const TextStyle(
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ],
                             ),
                           ),
-                        ),
-                      );
-                    },
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: shop.isOpen
+                                  ? Colors.green.shade50
+                                  : Colors.red.shade50,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              shop.isOpen ? 'OPEN' : 'CLOSED',
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                                color: shop.isOpen ? Colors.green : Colors.red,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
+                );
+              },
+            ),
           ),
         ],
       ),
