@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'screens/vendor_kds_screen.dart';
 import 'screens/vendor_menu_screen.dart';
 import 'screens/vendor_analytics_screen.dart';
+import 'screens/vendor_profile_screen.dart';
 
 class VendorNavigationWrapper extends StatefulWidget {
   const VendorNavigationWrapper({super.key});
@@ -18,6 +19,7 @@ class _VendorNavigationWrapperState extends State<VendorNavigationWrapper> {
     VendorKdsScreen(),
     VendorMenuScreen(),
     VendorAnalyticsScreen(),
+    VendorProfileScreen(),
   ];
 
   @override
@@ -46,6 +48,11 @@ class _VendorNavigationWrapperState extends State<VendorNavigationWrapper> {
             icon: Icon(Icons.bar_chart_outlined),
             selectedIcon: Icon(Icons.bar_chart),
             label: 'Sales',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.storefront_outlined),
+            selectedIcon: Icon(Icons.storefront),
+            label: 'Stall Settings',
           ),
         ],
       ),
