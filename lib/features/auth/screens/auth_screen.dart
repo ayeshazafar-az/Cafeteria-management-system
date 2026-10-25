@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../admin/screens/admin_dashboard_screen.dart';
 import '../../student/student_navigation_wrapper.dart';
 import '../../vendor/vendor_navigation_wrapper.dart';
 
@@ -11,7 +12,7 @@ class AuthScreen extends StatefulWidget {
 
 class _AuthScreenState extends State<AuthScreen> {
   bool isLogin = true;
-  String selectedRole = 'student'; // 'student' or 'vendor'
+  String selectedRole = 'student'; // 'student', 'vendor', or 'admin'
 
   final TextEditingController nameController = TextEditingController();
   final TextEditingController emailController = TextEditingController();
@@ -36,22 +37,14 @@ class _AuthScreenState extends State<AuthScreen> {
       return;
     }
 
-    // Mock Authentication Logic
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          isLogin
-              ? 'Logged in successfully as $selectedRole!'
-              : 'Account created as $selectedRole!',
-        ),
-        backgroundColor: Colors.green,
-      ),
-    );
-
-    // Route to appropriate section based on selected role
-    Widget destinationScreen = selectedRole == 'student'
-        ? const StudentNavigationWrapper()
-        : const VendorNavigationWrapper();
+    Widget destinationScreen;
+    if (selectedRole == 'student') {
+      destinationScreen = const StudentNavigationWrapper();
+    } else if (selectedRole == 'vendor') {
+      destinationScreen = const VendorNavigationWrapper();
+    } else {
+      destinationScreen = const AdminDashboardScreen();
+    }
 
     Navigator.pushReplacement(
       context,
@@ -72,7 +65,6 @@ class _AuthScreenState extends State<AuthScreen> {
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // Header Icon & Title
                 Icon(Icons.restaurant, size: 64, color: primaryColor),
                 const SizedBox(height: 12),
                 Text(
@@ -94,7 +86,6 @@ class _AuthScreenState extends State<AuthScreen> {
                 ),
                 const SizedBox(height: 32),
 
-                // Name Field (Only shown during Signup)
                 if (!isLogin) ...[
                   TextField(
                     controller: nameController,
@@ -109,7 +100,6 @@ class _AuthScreenState extends State<AuthScreen> {
                   const SizedBox(height: 16),
                 ],
 
-                // Email Field
                 TextField(
                   controller: emailController,
                   keyboardType: TextInputType.emailAddress,
@@ -123,7 +113,6 @@ class _AuthScreenState extends State<AuthScreen> {
                 ),
                 const SizedBox(height: 16),
 
-                // Password Field
                 TextField(
                   controller: passwordController,
                   obscureText: true,
@@ -137,44 +126,42 @@ class _AuthScreenState extends State<AuthScreen> {
                 ),
                 const SizedBox(height: 20),
 
-                // Role Selector (Student vs Vendor)
                 const Text(
-                  'Select Account Type:',
+                  'Select Role:',
                   style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                 ),
                 const SizedBox(height: 8),
-                Row(
+                Wrap(
+                  spacing: 8,
                   children: [
-                    Expanded(
-                      child: ChoiceChip(
-                        avatar: const Icon(Icons.school, size: 18),
-                        label: const Center(child: Text('Student')),
-                        selected: selectedRole == 'student',
-                        onSelected: (selected) {
-                          if (selected) {
-                            setState(() => selectedRole = 'student');
-                          }
-                        },
-                      ),
+                    ChoiceChip(
+                      avatar: const Icon(Icons.school, size: 16),
+                      label: const Text('Student'),
+                      selected: selectedRole == 'student',
+                      onSelected: (selected) {
+                        if (selected) setState(() => selectedRole = 'student');
+                      },
                     ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: ChoiceChip(
-                        avatar: const Icon(Icons.store, size: 18),
-                        label: const Center(child: Text('Cafe Vendor')),
-                        selected: selectedRole == 'vendor',
-                        onSelected: (selected) {
-                          if (selected) {
-                            setState(() => selectedRole = 'vendor');
-                          }
-                        },
-                      ),
+                    ChoiceChip(
+                      avatar: const Icon(Icons.store, size: 16),
+                      label: const Text('Vendor'),
+                      selected: selectedRole == 'vendor',
+                      onSelected: (selected) {
+                        if (selected) setState(() => selectedRole = 'vendor');
+                      },
+                    ),
+                    ChoiceChip(
+                      avatar: const Icon(Icons.admin_panel_settings, size: 16),
+                      label: const Text('Admin'),
+                      selected: selectedRole == 'admin',
+                      onSelected: (selected) {
+                        if (selected) setState(() => selectedRole = 'admin');
+                      },
                     ),
                   ],
                 ),
                 const SizedBox(height: 28),
 
-                // Submit Button
                 SizedBox(
                   height: 50,
                   child: ElevatedButton(
@@ -197,7 +184,6 @@ class _AuthScreenState extends State<AuthScreen> {
                 ),
                 const SizedBox(height: 16),
 
-                // Toggle Login / Signup Mode
                 TextButton(
                   onPressed: () {
                     setState(() {
