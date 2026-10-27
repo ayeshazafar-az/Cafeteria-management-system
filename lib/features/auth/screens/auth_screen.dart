@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
+import '../../../core/services/auth_service.dart';
 import '../../admin/screens/admin_dashboard_screen.dart';
 import '../../student/student_navigation_wrapper.dart';
 import '../../vendor/vendor_navigation_wrapper.dart';
@@ -12,6 +15,7 @@ class AuthScreen extends StatefulWidget {
 
 class _AuthScreenState extends State<AuthScreen> {
   bool isLogin = true;
+  bool isLoading = false;
   String selectedRole = 'student'; // 'student', 'vendor', or 'admin'
 
   final TextEditingController nameController = TextEditingController();
@@ -26,24 +30,63 @@ class _AuthScreenState extends State<AuthScreen> {
     super.dispose();
   }
 
-  void _submitAuth() {
+  Future<void> _submitAuth() async {
     final email = emailController.text.trim();
     final password = passwordController.text.trim();
+    final fullName = nameController.text.trim();
 
-    if (email.isEmpty || password.isEmpty) {
+    if (email.isEmpty || password.isEmpty || (!isLogin && fullName.isEmpty)) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please fill in all required fields.')),
       );
       return;
     }
 
-    Widget destinationScreen;
-    if (selectedRole == 'student') {
-      destinationScreen = const StudentNavigationWrapper();
-    } else if (selectedRole == 'vendor') {
-      destinationScreen = const VendorNavigationWrapper();
+    setState(() => isLoading = true);
+
+    final authService = Provider.of<AuthService>(context, listen: false);
+    String? errorMessage;
+
+    if (isLogin) {
+      errorMessage = await authService.signIn(email: email, password: password);
     } else {
+      errorMessage = await authService.signUp(
+        email: email,
+        password: password,
+        fullName: fullName,
+        role: selectedRole,
+      );
+    }
+
+    if (!mounted) return;
+
+    if (errorMessage != null) {
+      setState(() => isLoading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(errorMessage), backgroundColor: Colors.red),
+      );
+      return;
+    }
+
+    // Determine target screen based on authenticated role
+    final user = authService.currentUser;
+    String userRole = selectedRole;
+
+    if (user != null && isLogin) {
+      userRole = await authService.getUserRole(user.uid);
+    }
+
+    if (!mounted) return;
+
+    setState(() => isLoading = false);
+
+    Widget destinationScreen;
+    if (userRole == 'vendor') {
+      destinationScreen = const VendorNavigationWrapper();
+    } else if (userRole == 'admin') {
       destinationScreen = const AdminDashboardScreen();
+    } else {
+      destinationScreen = const StudentNavigationWrapper();
     }
 
     Navigator.pushReplacement(
@@ -126,41 +169,47 @@ class _AuthScreenState extends State<AuthScreen> {
                 ),
                 const SizedBox(height: 20),
 
-                const Text(
-                  'Select Role:',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                ),
-                const SizedBox(height: 8),
-                Wrap(
-                  spacing: 8,
-                  children: [
-                    ChoiceChip(
-                      avatar: const Icon(Icons.school, size: 16),
-                      label: const Text('Student'),
-                      selected: selectedRole == 'student',
-                      onSelected: (selected) {
-                        if (selected) setState(() => selectedRole = 'student');
-                      },
-                    ),
-                    ChoiceChip(
-                      avatar: const Icon(Icons.store, size: 16),
-                      label: const Text('Vendor'),
-                      selected: selectedRole == 'vendor',
-                      onSelected: (selected) {
-                        if (selected) setState(() => selectedRole = 'vendor');
-                      },
-                    ),
-                    ChoiceChip(
-                      avatar: const Icon(Icons.admin_panel_settings, size: 16),
-                      label: const Text('Admin'),
-                      selected: selectedRole == 'admin',
-                      onSelected: (selected) {
-                        if (selected) setState(() => selectedRole = 'admin');
-                      },
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 28),
+                if (!isLogin) ...[
+                  const Text(
+                    'Select Role:',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                  ),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 8,
+                    children: [
+                      ChoiceChip(
+                        avatar: const Icon(Icons.school, size: 16),
+                        label: const Text('Student'),
+                        selected: selectedRole == 'student',
+                        onSelected: (selected) {
+                          if (selected)
+                            setState(() => selectedRole = 'student');
+                        },
+                      ),
+                      ChoiceChip(
+                        avatar: const Icon(Icons.store, size: 16),
+                        label: const Text('Vendor'),
+                        selected: selectedRole == 'vendor',
+                        onSelected: (selected) {
+                          if (selected) setState(() => selectedRole = 'vendor');
+                        },
+                      ),
+                      ChoiceChip(
+                        avatar: const Icon(
+                          Icons.admin_panel_settings,
+                          size: 16,
+                        ),
+                        label: const Text('Admin'),
+                        selected: selectedRole == 'admin',
+                        onSelected: (selected) {
+                          if (selected) setState(() => selectedRole = 'admin');
+                        },
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 28),
+                ],
 
                 SizedBox(
                   height: 50,
@@ -172,14 +221,23 @@ class _AuthScreenState extends State<AuthScreen> {
                         borderRadius: BorderRadius.circular(12),
                       ),
                     ),
-                    onPressed: _submitAuth,
-                    child: Text(
-                      isLogin ? 'Sign In' : 'Create Account',
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
+                    onPressed: isLoading ? null : _submitAuth,
+                    child: isLoading
+                        ? const SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 2,
+                            ),
+                          )
+                        : Text(
+                            isLogin ? 'Sign In' : 'Create Account',
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                   ),
                 ),
                 const SizedBox(height: 16),
