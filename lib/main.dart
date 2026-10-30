@@ -1,22 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:firebase_core/firebase_core.dart';
 
 import 'core/theme/app_theme.dart';
-import 'core/services/auth_service.dart';
-import 'core/services/firestore_service.dart';
 import 'core/providers/cart_provider.dart';
+import 'core/providers/order_provider.dart';
+import 'core/providers/theme_provider.dart';
 import 'features/auth/screens/auth_screen.dart';
 
-void main() async {
+void main() {
   WidgetsFlutterBinding.ensureInitialized();
-
-  try {
-    await Firebase.initializeApp();
-  } catch (e) {
-    debugPrint('Firebase initialization note: $e');
-  }
-
   runApp(const CafeteriaApp());
 }
 
@@ -28,14 +20,20 @@ class CafeteriaApp extends StatelessWidget {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => CartProvider()),
-        Provider(create: (_) => AuthService()),
-        Provider(create: (_) => FirestoreService()),
+        ChangeNotifierProvider(create: (_) => OrderProvider()),
+        ChangeNotifierProvider(create: (_) => ThemeProvider()),
       ],
-      child: MaterialApp(
-        title: 'Campus Cafeteria',
-        debugShowCheckedModeBanner: false,
-        theme: AppTheme.lightTheme,
-        home: const AuthScreen(),
+      child: Consumer<ThemeProvider>(
+        builder: (context, themeProvider, child) {
+          return MaterialApp(
+            title: 'Campus Cafeteria',
+            debugShowCheckedModeBanner: false,
+            theme: AppTheme.lightTheme,
+            darkTheme: AppTheme.darkTheme,
+            themeMode: themeProvider.themeMode,
+            home: const AuthScreen(),
+          );
+        },
       ),
     );
   }

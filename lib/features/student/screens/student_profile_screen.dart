@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
+import '../../../core/providers/theme_provider.dart';
 import '../../auth/screens/auth_screen.dart';
 import 'student_order_history_screen.dart';
 
@@ -157,6 +160,30 @@ class StudentProfileScreen extends StatelessWidget {
                     onTap: () {},
                   ),
                   const Divider(height: 1),
+
+                  // Dark Mode Theme Toggle Switch
+                  Consumer<ThemeProvider>(
+                    builder: (context, themeProvider, child) {
+                      return SwitchListTile(
+                        secondary: Icon(
+                          themeProvider.isDarkMode
+                              ? Icons.dark_mode_outlined
+                              : Icons.light_mode_outlined,
+                          color: Colors.purple,
+                        ),
+                        title: const Text('Dark Mode'),
+                        subtitle: const Text(
+                          'Switch between light and dark themes',
+                        ),
+                        value: themeProvider.isDarkMode,
+                        onChanged: (val) {
+                          themeProvider.toggleTheme(val);
+                        },
+                      );
+                    },
+                  ),
+                  const Divider(height: 1),
+
                   ListTile(
                     leading: const Icon(
                       Icons.notifications_none,
