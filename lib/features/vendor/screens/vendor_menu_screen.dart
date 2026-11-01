@@ -6,6 +6,7 @@ class VendorMenuItem {
   String description;
   double price;
   String category;
+  List<String> tags;
   bool isAvailable;
 
   VendorMenuItem({
@@ -14,6 +15,7 @@ class VendorMenuItem {
     required this.description,
     required this.price,
     required this.category,
+    this.tags = const [],
     this.isAvailable = true,
   });
 }
@@ -26,6 +28,23 @@ class VendorMenuScreen extends StatefulWidget {
 }
 
 class _VendorMenuScreenState extends State<VendorMenuScreen> {
+  final List<String> availableCategories = const [
+    'Burgers',
+    'Sandwiches',
+    'Rolls',
+    'Sides',
+    'Drinks',
+    'Desi',
+  ];
+
+  final List<String> availableTags = const [
+    'Spicy 🌶️',
+    'Bestseller ⭐',
+    'Chef Special 👨‍🍳',
+    'Vegetarian 🥬',
+    'Cheesy 🧀',
+  ];
+
   final List<VendorMenuItem> menuItems = [
     VendorMenuItem(
       id: 'm1',
@@ -33,6 +52,7 @@ class _VendorMenuScreenState extends State<VendorMenuScreen> {
       description: 'Crispy fried chicken fillet with mayo & lettuce',
       price: 350.0,
       category: 'Burgers',
+      tags: ['Spicy 🌶️', 'Bestseller ⭐'],
       isAvailable: true,
     ),
     VendorMenuItem(
@@ -41,6 +61,7 @@ class _VendorMenuScreenState extends State<VendorMenuScreen> {
       description: 'Layered chicken, egg, and cheese toasties',
       price: 280.0,
       category: 'Sandwiches',
+      tags: ['Cheesy 🧀'],
       isAvailable: true,
     ),
     VendorMenuItem(
@@ -49,6 +70,7 @@ class _VendorMenuScreenState extends State<VendorMenuScreen> {
       description: 'Crisp hot potato fries with spicy seasoning',
       price: 150.0,
       category: 'Sides',
+      tags: ['Spicy 🌶️', 'Vegetarian 🥬'],
       isAvailable: true,
     ),
     VendorMenuItem(
@@ -57,6 +79,7 @@ class _VendorMenuScreenState extends State<VendorMenuScreen> {
       description: 'Grilled chicken wrapped in crispy paratha',
       price: 220.0,
       category: 'Rolls',
+      tags: ['Chef Special 👨‍🍳'],
       isAvailable: false,
     ),
   ];
@@ -86,94 +109,163 @@ class _VendorMenuScreenState extends State<VendorMenuScreen> {
     final priceController = TextEditingController(
       text: isEditing ? existingItem.price.toStringAsFixed(0) : '',
     );
-    final categoryController = TextEditingController(
-      text: isEditing ? existingItem.category : 'Fast Food',
-    );
+
+    String selectedCategory = isEditing
+        ? existingItem.category
+        : availableCategories.first;
+    List<String> selectedTags = isEditing
+        ? List<String>.from(existingItem.tags)
+        : [];
 
     showDialog(
       context: context,
       builder: (context) {
-        return AlertDialog(
-          title: Text(isEditing ? 'Edit Menu Item' : 'Add New Menu Item'),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(
-                  controller: nameController,
-                  decoration: const InputDecoration(
-                    labelText: 'Item Name',
-                    hintText: 'e.g., Zinger Burger',
-                  ),
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              title: Text(isEditing ? 'Edit Menu Item' : 'Add New Menu Item'),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    TextField(
+                      controller: nameController,
+                      decoration: const InputDecoration(
+                        labelText: 'Item Name',
+                        hintText: 'e.g., Zinger Burger',
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    TextField(
+                      controller: descController,
+                      decoration: const InputDecoration(
+                        labelText: 'Description',
+                        hintText: 'e.g., Crispy chicken fillet',
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    TextField(
+                      controller: priceController,
+                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(
+                        labelText: 'Price (PKR)',
+                        hintText: 'e.g., 350',
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Category Selection Chips
+                    const Text(
+                      'Category:',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 13,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Wrap(
+                      spacing: 6,
+                      runSpacing: 4,
+                      children: availableCategories.map((cat) {
+                        final isSelected = selectedCategory == cat;
+                        return ChoiceChip(
+                          label: Text(
+                            cat,
+                            style: const TextStyle(fontSize: 12),
+                          ),
+                          selected: isSelected,
+                          onSelected: (selected) {
+                            if (selected) {
+                              setDialogState(() {
+                                selectedCategory = cat;
+                              });
+                            }
+                          },
+                        );
+                      }).toList(),
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Tags Selection Chips
+                    const Text(
+                      'Item Badges & Tags:',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 13,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Wrap(
+                      spacing: 6,
+                      runSpacing: 4,
+                      children: availableTags.map((tag) {
+                        final isSelected = selectedTags.contains(tag);
+                        return FilterChip(
+                          label: Text(
+                            tag,
+                            style: const TextStyle(fontSize: 12),
+                          ),
+                          selected: isSelected,
+                          onSelected: (selected) {
+                            setDialogState(() {
+                              if (selected) {
+                                selectedTags.add(tag);
+                              } else {
+                                selectedTags.remove(tag);
+                              }
+                            });
+                          },
+                        );
+                      }).toList(),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 10),
-                TextField(
-                  controller: descController,
-                  decoration: const InputDecoration(
-                    labelText: 'Description',
-                    hintText: 'e.g., Crispy chicken fillet',
-                  ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Cancel'),
                 ),
-                const SizedBox(height: 10),
-                TextField(
-                  controller: priceController,
-                  keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(
-                    labelText: 'Price (PKR)',
-                    hintText: 'e.g., 350',
-                  ),
-                ),
-                const SizedBox(height: 10),
-                TextField(
-                  controller: categoryController,
-                  decoration: const InputDecoration(
-                    labelText: 'Category',
-                    hintText: 'e.g., Burgers, Drinks, Snacks',
-                  ),
+                ElevatedButton(
+                  onPressed: () {
+                    final name = nameController.text.trim();
+                    final desc = descController.text.trim();
+                    final price = double.tryParse(priceController.text) ?? 0.0;
+
+                    if (name.isEmpty || price <= 0) {
+                      return;
+                    }
+
+                    setState(() {
+                      if (isEditing) {
+                        existingItem.name = name;
+                        existingItem.description = desc;
+                        existingItem.price = price;
+                        existingItem.category = selectedCategory;
+                        existingItem.tags = selectedTags;
+                      } else {
+                        menuItems.add(
+                          VendorMenuItem(
+                            id: DateTime.now().millisecondsSinceEpoch
+                                .toString(),
+                            name: name,
+                            description: desc,
+                            price: price,
+                            category: selectedCategory,
+                            tags: selectedTags,
+                            isAvailable: true,
+                          ),
+                        );
+                      }
+                    });
+                    Navigator.pop(context);
+                  },
+                  child: Text(isEditing ? 'Save Changes' : 'Add Item'),
                 ),
               ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                final name = nameController.text.trim();
-                final desc = descController.text.trim();
-                final price = double.tryParse(priceController.text) ?? 0.0;
-                final category = categoryController.text.trim();
-
-                if (name.isEmpty || price <= 0) {
-                  return;
-                }
-
-                setState(() {
-                  if (isEditing) {
-                    existingItem.name = name;
-                    existingItem.description = desc;
-                    existingItem.price = price;
-                    existingItem.category = category;
-                  } else {
-                    menuItems.add(
-                      VendorMenuItem(
-                        id: DateTime.now().millisecondsSinceEpoch.toString(),
-                        name: name,
-                        description: desc,
-                        price: price,
-                        category: category,
-                        isAvailable: true,
-                      ),
-                    );
-                  }
-                });
-                Navigator.pop(context);
-              },
-              child: Text(isEditing ? 'Save Changes' : 'Add Item'),
-            ),
-          ],
+            );
+          },
         );
       },
     );
@@ -230,113 +322,150 @@ class _VendorMenuScreenState extends State<VendorMenuScreen> {
                   ),
                   child: Padding(
                     padding: const EdgeInsets.all(12),
-                    child: Row(
+                    child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
+                                  Row(
+                                    children: [
+                                      Text(
+                                        item.name,
+                                        style: const TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 6,
+                                          vertical: 2,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: Colors.blue.shade50,
+                                          borderRadius: BorderRadius.circular(
+                                            4,
+                                          ),
+                                        ),
+                                        child: Text(
+                                          item.category,
+                                          style: const TextStyle(
+                                            fontSize: 10,
+                                            fontWeight: FontWeight.w600,
+                                            color: Colors.blue,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 4),
                                   Text(
-                                    item.name,
-                                    style: const TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
+                                    item.description,
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.grey.shade600,
                                     ),
                                   ),
-                                  const SizedBox(width: 8),
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 6,
-                                      vertical: 2,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: Colors.blue.shade50,
-                                      borderRadius: BorderRadius.circular(4),
-                                    ),
-                                    child: Text(
-                                      item.category,
-                                      style: const TextStyle(
-                                        fontSize: 10,
-                                        fontWeight: FontWeight.w600,
-                                        color: Colors.blue,
-                                      ),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    'PKR ${item.price.toStringAsFixed(0)}',
+                                    style: TextStyle(
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.bold,
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.primary,
                                     ),
                                   ),
                                 ],
                               ),
-                              const SizedBox(height: 4),
-                              Text(
-                                item.description,
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: Colors.grey.shade600,
-                                ),
-                              ),
-                              const SizedBox(height: 8),
-                              Text(
-                                'PKR ${item.price.toStringAsFixed(0)}',
-                                style: TextStyle(
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.bold,
-                                  color: Theme.of(context).colorScheme.primary,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: [
-                            Row(
-                              children: [
-                                Text(
-                                  item.isAvailable ? 'In Stock' : 'Out',
-                                  style: TextStyle(
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.bold,
-                                    color: item.isAvailable
-                                        ? Colors.green
-                                        : Colors.red,
-                                  ),
-                                ),
-                                Transform.scale(
-                                  scale: 0.8,
-                                  child: Switch(
-                                    value: item.isAvailable,
-                                    onChanged: (val) =>
-                                        _toggleAvailability(item, val),
-                                  ),
-                                ),
-                              ],
                             ),
-                            Row(
-                              mainAxisSize: MainAxisSize.min,
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.end,
                               children: [
-                                IconButton(
-                                  icon: const Icon(
-                                    Icons.edit,
-                                    size: 20,
-                                    color: Colors.blue,
-                                  ),
-                                  onPressed: () => _showAddEditItemDialog(
-                                    existingItem: item,
-                                  ),
+                                Row(
+                                  children: [
+                                    Text(
+                                      item.isAvailable ? 'In Stock' : 'Out',
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.bold,
+                                        color: item.isAvailable
+                                            ? Colors.green
+                                            : Colors.red,
+                                      ),
+                                    ),
+                                    Transform.scale(
+                                      scale: 0.8,
+                                      child: Switch(
+                                        value: item.isAvailable,
+                                        onChanged: (val) =>
+                                            _toggleAvailability(item, val),
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                                IconButton(
-                                  icon: const Icon(
-                                    Icons.delete_outline,
-                                    size: 20,
-                                    color: Colors.red,
-                                  ),
-                                  onPressed: () => _deleteItem(item),
+                                Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    IconButton(
+                                      icon: const Icon(
+                                        Icons.edit,
+                                        size: 20,
+                                        color: Colors.blue,
+                                      ),
+                                      onPressed: () => _showAddEditItemDialog(
+                                        existingItem: item,
+                                      ),
+                                    ),
+                                    IconButton(
+                                      icon: const Icon(
+                                        Icons.delete_outline,
+                                        size: 20,
+                                        color: Colors.red,
+                                      ),
+                                      onPressed: () => _deleteItem(item),
+                                    ),
+                                  ],
                                 ),
                               ],
                             ),
                           ],
                         ),
+                        if (item.tags.isNotEmpty) ...[
+                          const SizedBox(height: 8),
+                          Wrap(
+                            spacing: 4,
+                            children: item.tags.map((tag) {
+                              return Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 6,
+                                  vertical: 2,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.grey.shade100,
+                                  borderRadius: BorderRadius.circular(4),
+                                  border: Border.all(
+                                    color: Colors.grey.shade300,
+                                  ),
+                                ),
+                                child: Text(
+                                  tag,
+                                  style: const TextStyle(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              );
+                            }).toList(),
+                          ),
+                        ],
                       ],
                     ),
                   ),
