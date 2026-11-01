@@ -27,8 +27,7 @@ class StudentProfileScreen extends StatelessWidget {
               foregroundColor: Colors.white,
             ),
             onPressed: () {
-              Navigator.pop(context); // Close dialog
-              // Navigate to AuthScreen and remove all previous routes
+              Navigator.pop(context);
               Navigator.pushAndRemoveUntil(
                 context,
                 MaterialPageRoute(builder: (context) => const AuthScreen()),
@@ -50,7 +49,6 @@ class StudentProfileScreen extends StatelessWidget {
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
-            // User Avatar & Primary Info Card
             Card(
               elevation: 2,
               shape: RoundedRectangleBorder(
@@ -122,7 +120,6 @@ class StudentProfileScreen extends StatelessWidget {
             ),
             const SizedBox(height: 20),
 
-            // Quick Options List
             Card(
               elevation: 1.5,
               shape: RoundedRectangleBorder(
@@ -161,7 +158,6 @@ class StudentProfileScreen extends StatelessWidget {
                   ),
                   const Divider(height: 1),
 
-                  // Dark Mode Theme Toggle Switch
                   Consumer<ThemeProvider>(
                     builder: (context, themeProvider, child) {
                       return SwitchListTile(
@@ -207,7 +203,6 @@ class StudentProfileScreen extends StatelessWidget {
             ),
             const SizedBox(height: 32),
 
-            // Red Sign Out Button
             SizedBox(
               width: double.infinity,
               height: 50,
