@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
+import '../../../core/providers/cart_provider.dart';
+import '../../../core/providers/order_provider.dart';
 
 class CheckoutScreen extends StatefulWidget {
   final String shopName;
@@ -19,7 +23,7 @@ class CheckoutScreen extends StatefulWidget {
 }
 
 class _CheckoutScreenState extends State<CheckoutScreen> {
-  String selectedPaymentMethod = 'cash'; // 'cash' or 'online'
+  String selectedPaymentMethod = 'Cash on Pickup';
   final TextEditingController notesController = TextEditingController();
 
   @override
@@ -28,20 +32,62 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     super.dispose();
   }
 
+  void _confirmAndPlaceOrder() {
+    final orderProvider = Provider.of<OrderProvider>(context, listen: false);
+    final cartProvider = Provider.of<CartProvider>(context, listen: false);
+
+    final List<LocalOrderItem> orderItems = [];
+    widget.cart.forEach((itemId, quantity) {
+      final item = widget.dynamicMenuItems.firstWhere(
+        (e) => e.id == itemId,
+      );
+      orderItems.add(
+        LocalOrderItem(
+          name: item.name,
+          quantity: quantity,
+          price: item.price,
+        ),
+      );
+    });
+
+    final token = orderProvider.placeOrder(
+      shopName: widget.shopName,
+      studentName: 'Ayesha Zafar',
+      items: orderItems,
+      totalAmount: widget.totalPrice,
+      paymentMethod: selectedPaymentMethod,
+      specialInstructions: notesController.text.trim(),
+    );
+
+    cartProvider.clearCart();
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Order Placed Successfully! Token $token'),
+        backgroundColor: Colors.green,
+        duration: const Duration(seconds: 3),
+      ),
+    );
+
+    Navigator.popUntil(context, (route) => route.isFirst);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Order Summary')),
+      appBar: AppBar(
+        title: const Text('Order Summary'),
+      ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Shop Name Card
             Card(
-              color: Theme.of(
-                context,
-              ).colorScheme.primaryContainer.withOpacity(0.4),
+              color: Theme.of(context)
+                  .colorScheme
+                  .primaryContainer
+                  .withOpacity(0.4),
               elevation: 0,
               child: Padding(
                 padding: const EdgeInsets.all(16),
@@ -62,7 +108,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
             ),
             const SizedBox(height: 20),
 
-            // Order Items Breakdown
             const Text(
               'Selected Items',
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
@@ -78,9 +123,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                 itemBuilder: (context, index) {
                   final itemId = widget.cart.keys.elementAt(index);
                   final quantity = widget.cart[itemId]!;
-                  final item = widget.dynamicMenuItems.firstWhere(
-                    (e) => e.id == itemId,
-                  );
+                  final item = widget.dynamicMenuItems
+                      .firstWhere((e) => e.id == itemId);
 
                   return Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -100,7 +144,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
             ),
             const SizedBox(height: 20),
 
-            // Special Instructions Textbox
             const Text(
               'Special Instructions',
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
@@ -121,7 +164,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
             ),
             const SizedBox(height: 20),
 
-            // Payment Method Selector
             const Text(
               'Payment Method',
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
@@ -129,14 +171,11 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
             const SizedBox(height: 8),
             RadioListTile<String>(
               title: const Text('Cash on Pickup'),
-              subtitle: const Text(
-                'Pay by hand at counter when receiving order',
-              ),
-              secondary: const Icon(
-                Icons.payments_outlined,
-                color: Colors.green,
-              ),
-              value: 'cash',
+              subtitle:
+                  const Text('Pay by hand at counter when receiving order'),
+              secondary:
+                  const Icon(Icons.payments_outlined, color: Colors.green),
+              value: 'Cash on Pickup',
               groupValue: selectedPaymentMethod,
               onChanged: (value) {
                 setState(() => selectedPaymentMethod = value!);
@@ -145,11 +184,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
             RadioListTile<String>(
               title: const Text('Online Payment'),
               subtitle: const Text('JazzCash / EasyPaisa / Card'),
-              secondary: const Icon(
-                Icons.account_balance_wallet_outlined,
-                color: Colors.purple,
-              ),
-              value: 'online',
+              secondary: const Icon(Icons.account_balance_wallet_outlined,
+                  color: Colors.purple),
+              value: 'Online Payment',
               groupValue: selectedPaymentMethod,
               onChanged: (value) {
                 setState(() => selectedPaymentMethod = value!);
@@ -157,7 +194,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
             ),
             const SizedBox(height: 24),
 
-            // Bill Total Summary
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -177,7 +213,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
             ),
             const SizedBox(height: 24),
 
-            // Place Order Button
             SizedBox(
               width: double.infinity,
               height: 50,
@@ -189,15 +224,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                     borderRadius: BorderRadius.circular(12),
                   ),
                 ),
-                onPressed: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Order Placed Successfully! Token #104'),
-                      backgroundColor: Colors.green,
-                    ),
-                  );
-                  Navigator.popUntil(context, (route) => route.isFirst);
-                },
+                onPressed: _confirmAndPlaceOrder,
                 child: const Text(
                   'Confirm & Place Order',
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
