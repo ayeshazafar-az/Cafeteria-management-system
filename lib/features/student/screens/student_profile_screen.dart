@@ -3,6 +3,8 @@ import 'package:provider/provider.dart';
 
 import '../../../core/providers/theme_provider.dart';
 import '../../auth/screens/auth_screen.dart';
+import 'favorite_dishes_screen.dart';
+import 'notification_center_screen.dart';
 import 'student_order_history_screen.dart';
 
 class StudentProfileScreen extends StatelessWidget {
@@ -154,7 +156,14 @@ class StudentProfileScreen extends StatelessWidget {
                     title: const Text('Favorite Dishes'),
                     subtitle: const Text('Quick order saved meals'),
                     trailing: const Icon(Icons.chevron_right),
-                    onTap: () {},
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const FavoriteDishesScreen(),
+                        ),
+                      );
+                    },
                   ),
                   const Divider(height: 1),
 
@@ -185,10 +194,18 @@ class StudentProfileScreen extends StatelessWidget {
                       Icons.notifications_none,
                       color: Colors.blue,
                     ),
-                    title: const Text('Notification Preferences'),
-                    subtitle: const Text('Pickup alerts & sound settings'),
+                    title: const Text('Notification Center'),
+                    subtitle: const Text('Pickup alerts & promo updates'),
                     trailing: const Icon(Icons.chevron_right),
-                    onTap: () {},
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) =>
+                              const NotificationCenterScreen(),
+                        ),
+                      );
+                    },
                   ),
                   const Divider(height: 1),
                   ListTile(
