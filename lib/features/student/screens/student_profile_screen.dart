@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../../../core/providers/theme_provider.dart';
 import '../../auth/screens/auth_screen.dart';
+import 'cafeteria_support_screen.dart';
 import 'favorite_dishes_screen.dart';
 import 'notification_center_screen.dart';
 import 'student_order_history_screen.dart';
@@ -211,9 +212,16 @@ class StudentProfileScreen extends StatelessWidget {
                   ListTile(
                     leading: const Icon(Icons.help_outline, color: Colors.teal),
                     title: const Text('Help & Cafeteria Support'),
-                    subtitle: const Text('Report an issue or query'),
+                    subtitle: const Text('FAQs & ticket issue reporting'),
                     trailing: const Icon(Icons.chevron_right),
-                    onTap: () {},
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const CafeteriaSupportScreen(),
+                        ),
+                      );
+                    },
                   ),
                 ],
               ),
