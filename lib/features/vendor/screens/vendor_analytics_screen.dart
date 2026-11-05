@@ -1,14 +1,28 @@
 import 'package:flutter/material.dart';
 
-class TopDish {
+class TopSellingItem {
   final String name;
-  final int ordersCount;
+  final int totalSold;
   final double totalRevenue;
+  final String category;
 
-  const TopDish({
+  const TopSellingItem({
     required this.name,
-    required this.ordersCount,
+    required this.totalSold,
     required this.totalRevenue,
+    required this.category,
+  });
+}
+
+class DailyRevenueData {
+  final String day;
+  final double amount;
+  final bool isToday;
+
+  const DailyRevenueData({
+    required this.day,
+    required this.amount,
+    this.isToday = false,
   });
 }
 
@@ -20,46 +34,80 @@ class VendorAnalyticsScreen extends StatefulWidget {
 }
 
 class _VendorAnalyticsScreenState extends State<VendorAnalyticsScreen> {
-  String selectedTimeRange = 'Today'; // 'Today', 'This Week', 'This Month'
+  String _selectedFilter = 'This Week';
+  final List<String> _filters = const ['Today', 'This Week', 'This Month'];
 
-  final List<TopDish> topDishes = const [
-    TopDish(name: 'Zinger Burger', ordersCount: 42, totalRevenue: 14700.0),
-    TopDish(name: 'Club Sandwich', ordersCount: 28, totalRevenue: 7840.0),
-    TopDish(name: 'Masala Fries', ordersCount: 35, totalRevenue: 5250.0),
-    TopDish(
-      name: 'Chicken Paratha Roll',
-      ordersCount: 19,
-      totalRevenue: 4180.0,
+  final List<DailyRevenueData> _weeklyData = const [
+    DailyRevenueData(day: 'Mon', amount: 8200),
+    DailyRevenueData(day: 'Tue', amount: 10400),
+    DailyRevenueData(day: 'Wed', amount: 9600),
+    DailyRevenueData(day: 'Thu', amount: 12100),
+    DailyRevenueData(day: 'Fri', amount: 14500),
+    DailyRevenueData(day: 'Sat', amount: 6200),
+    DailyRevenueData(day: 'Sun', amount: 15300, isToday: true),
+  ];
+
+  final List<TopSellingItem> _topItems = const [
+    TopSellingItem(
+      name: 'Zinger Burger',
+      totalSold: 142,
+      totalRevenue: 49700.0,
+      category: 'Burgers',
+    ),
+    TopSellingItem(
+      name: 'Club Sandwich',
+      totalSold: 98,
+      totalRevenue: 27440.0,
+      category: 'Sandwiches',
+    ),
+    TopSellingItem(
+      name: 'Masala Fries',
+      totalSold: 85,
+      totalRevenue: 12750.0,
+      category: 'Sides',
+    ),
+    TopSellingItem(
+      name: 'Doodh Patti Chai',
+      totalSold: 74,
+      totalRevenue: 5920.0,
+      category: 'Drinks',
     ),
   ];
 
   @override
   Widget build(BuildContext context) {
+    final maxRevenue = _weeklyData
+        .map((e) => e.amount)
+        .reduce((a, b) => a > b ? a : b);
+
     return Scaffold(
       appBar: AppBar(title: const Text('Sales & Analytics')),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Time Range Filter Control
+            // Time Range Chips
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: ['Today', 'This Week', 'This Month'].map((range) {
-                final isSelected = selectedTimeRange == range;
-                return Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 4.0),
-                    child: ChoiceChip(
-                      label: Center(
-                        child: Text(
-                          range,
-                          style: TextStyle(
-                            fontWeight: isSelected
-                                ? FontWeight.bold
-                                : FontWeight.normal,
-                            color: isSelected ? Colors.white : Colors.black,
-                          ),
+              children: [
+                const Text(
+                  'Performance Overview',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                Wrap(
+                  spacing: 6,
+                  children: _filters.map((filter) {
+                    final isSelected = _selectedFilter == filter;
+                    return ChoiceChip(
+                      label: Text(
+                        filter,
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: isSelected
+                              ? FontWeight.bold
+                              : FontWeight.normal,
+                          color: isSelected ? Colors.white : Colors.black87,
                         ),
                       ),
                       selected: isSelected,
@@ -67,102 +115,255 @@ class _VendorAnalyticsScreenState extends State<VendorAnalyticsScreen> {
                       onSelected: (selected) {
                         if (selected) {
                           setState(() {
-                            selectedTimeRange = range;
+                            _selectedFilter = filter;
                           });
                         }
                       },
-                    ),
-                  ),
-                );
-              }).toList(),
+                    );
+                  }).toList(),
+                ),
+              ],
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 16),
 
-            // Key Performance Metric Cards Grid
+            // Top Summary Cards Grid
             GridView.count(
               crossAxisCount: 2,
               crossAxisSpacing: 12,
               mainAxisSpacing: 12,
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
-              childAspectRatio: 1.4,
+              childAspectRatio: 1.35,
               children: [
                 _buildMetricCard(
-                  title: 'Total Revenue',
-                  value: 'PKR 31,970',
-                  icon: Icons.account_balance_wallet_rounded,
-                  color: Colors.green,
+                  'Total Revenue',
+                  'PKR 76,300',
+                  '+14.2% vs last week',
+                  Icons.payments_rounded,
+                  Colors.green,
                 ),
                 _buildMetricCard(
-                  title: 'Total Orders',
-                  value: '124',
-                  icon: Icons.receipt_long_rounded,
-                  color: Colors.blue,
+                  'Completed Orders',
+                  '399 Orders',
+                  'Avg 57 orders/day',
+                  Icons.shopping_bag_rounded,
+                  Colors.blue,
                 ),
                 _buildMetricCard(
-                  title: 'Completed',
-                  value: '118',
-                  icon: Icons.check_circle_rounded,
-                  color: Colors.teal,
+                  'Average Ticket Size',
+                  'PKR 191',
+                  'Per order average',
+                  Icons.analytics_rounded,
+                  Colors.orange,
                 ),
                 _buildMetricCard(
-                  title: 'Cancelled/Refund',
-                  value: '6',
-                  icon: Icons.cancel_rounded,
-                  color: Colors.redAccent,
+                  'Peak Rush Hour',
+                  '1:00 PM - 2:30 PM',
+                  'Lunch rush period',
+                  Icons.access_time_filled_rounded,
+                  Colors.purple,
                 ),
               ],
             ),
             const SizedBox(height: 24),
 
-            // Payment Breakdown Section
-            const Text(
-              'Payment Methods',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 10),
+            // Custom Weekly Revenue Bar Chart Card
             Card(
               elevation: 2,
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(16),
               ),
               child: Padding(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(16.0),
                 child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: const [
-                        Row(
+                      children: [
+                        const Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Icon(Icons.payments_outlined, color: Colors.green),
-                            SizedBox(width: 8),
-                            Text('Cash on Pickup'),
+                            Text(
+                              'Weekly Sales Volume',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            SizedBox(height: 2),
+                            Text(
+                              'Daily revenue breakdown in PKR',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey,
+                              ),
+                            ),
                           ],
                         ),
-                        Text(
-                          'PKR 21,500 (67%)',
-                          style: TextStyle(fontWeight: FontWeight.bold),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.green.shade50,
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: const Text(
+                            'Highest: Sun (15.3k)',
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.green,
+                            ),
+                          ),
                         ),
                       ],
                     ),
-                    const Divider(height: 20),
+                    const SizedBox(height: 24),
+
+                    // Bar Chart Display
+                    SizedBox(
+                      height: 160,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: _weeklyData.map((data) {
+                          final heightRatio = (data.amount / maxRevenue);
+                          return Column(
+                            mainAxisAlignment: MainAxisAlignment.end,
+                            children: [
+                              Text(
+                                '${(data.amount / 1000).toStringAsFixed(1)}k',
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w600,
+                                  color: data.isToday
+                                      ? Theme.of(context).colorScheme.primary
+                                      : Colors.grey.shade600,
+                                ),
+                              ),
+                              const SizedBox(height: 6),
+                              AnimatedContainer(
+                                duration: const Duration(milliseconds: 500),
+                                width: 22,
+                                height: 110 * heightRatio,
+                                decoration: BoxDecoration(
+                                  color: data.isToday
+                                      ? Theme.of(context).colorScheme.primary
+                                      : Theme.of(
+                                          context,
+                                        ).colorScheme.primary.withOpacity(0.3),
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                data.day,
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: data.isToday
+                                      ? FontWeight.bold
+                                      : FontWeight.normal,
+                                ),
+                              ),
+                            ],
+                          );
+                        }).toList(),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 24),
+
+            // Payment Breakdown Card
+            Card(
+              elevation: 1.5,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Payment Method Split',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
                     Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: const [
-                        Row(
-                          children: [
-                            Icon(
-                              Icons.account_balance_wallet_outlined,
-                              color: Colors.purple,
-                            ),
-                            SizedBox(width: 8),
-                            Text('Online Payments'),
-                          ],
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(
+                                    'Cash on Pickup',
+                                    style: TextStyle(fontSize: 13),
+                                  ),
+                                  Text(
+                                    '68%',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 13,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 6),
+                              LinearProgressIndicator(
+                                value: 0.68,
+                                color: Colors.green,
+                                backgroundColor: Colors.green.shade50,
+                                minHeight: 8,
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                            ],
+                          ),
                         ),
-                        Text(
-                          'PKR 10,470 (33%)',
-                          style: TextStyle(fontWeight: FontWeight.bold),
+                        const SizedBox(width: 24),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(
+                                    'Online Payments',
+                                    style: TextStyle(fontSize: 13),
+                                  ),
+                                  Text(
+                                    '32%',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 13,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 6),
+                              LinearProgressIndicator(
+                                value: 0.32,
+                                color: Colors.purple,
+                                backgroundColor: Colors.purple.shade50,
+                                minHeight: 8,
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                            ],
+                          ),
                         ),
                       ],
                     ),
@@ -174,28 +375,25 @@ class _VendorAnalyticsScreenState extends State<VendorAnalyticsScreen> {
 
             // Top Selling Items Section
             const Text(
-              'Top Selling Dishes',
+              'Top Performing Dishes',
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 10),
-            Card(
-              elevation: 2,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: ListView.separated(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                padding: const EdgeInsets.all(12),
-                itemCount: topDishes.length,
-                separatorBuilder: (context, index) => const Divider(),
-                itemBuilder: (context, index) {
-                  final dish = topDishes[index];
-                  return ListTile(
+
+            ListView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: _topItems.length,
+              itemBuilder: (context, index) {
+                final item = _topItems[index];
+
+                return Card(
+                  margin: const EdgeInsets.only(bottom: 10),
+                  child: ListTile(
                     leading: CircleAvatar(
                       backgroundColor: Theme.of(
                         context,
-                      ).colorScheme.primaryContainer,
+                      ).colorScheme.primaryContainer.withOpacity(0.5),
                       child: Text(
                         '#${index + 1}',
                         style: TextStyle(
@@ -205,20 +403,36 @@ class _VendorAnalyticsScreenState extends State<VendorAnalyticsScreen> {
                       ),
                     ),
                     title: Text(
-                      dish.name,
-                      style: const TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                    subtitle: Text('${dish.ordersCount} orders placed'),
-                    trailing: Text(
-                      'PKR ${dish.totalRevenue.toStringAsFixed(0)}',
+                      item.name,
                       style: const TextStyle(
                         fontWeight: FontWeight.bold,
-                        fontSize: 14,
+                        fontSize: 15,
                       ),
                     ),
-                  );
-                },
-              ),
+                    subtitle: Text('${item.totalSold} portions ordered'),
+                    trailing: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Text(
+                          'PKR ${item.totalRevenue.toStringAsFixed(0)}',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                          ),
+                        ),
+                        Text(
+                          item.category,
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: Colors.grey.shade600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
             ),
           ],
         ),
@@ -226,17 +440,18 @@ class _VendorAnalyticsScreenState extends State<VendorAnalyticsScreen> {
     );
   }
 
-  Widget _buildMetricCard({
-    required String title,
-    required String value,
-    required IconData icon,
-    required Color color,
-  }) {
+  Widget _buildMetricCard(
+    String title,
+    String value,
+    String subtitle,
+    IconData icon,
+    Color color,
+  ) {
     return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      elevation: 1.5,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
       child: Padding(
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.all(12.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisAlignment: MainAxisAlignment.center,
@@ -244,21 +459,32 @@ class _VendorAnalyticsScreenState extends State<VendorAnalyticsScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  title,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey.shade700,
-                    fontWeight: FontWeight.w500,
+                Expanded(
+                  child: Text(
+                    title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey.shade600,
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
                 ),
-                Icon(icon, color: color, size: 22),
+                Icon(icon, color: color, size: 20),
               ],
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 6),
             Text(
               value,
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              subtitle,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(fontSize: 10, color: Colors.grey.shade500),
             ),
           ],
         ),
