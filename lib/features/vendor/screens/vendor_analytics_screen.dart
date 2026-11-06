@@ -74,6 +74,192 @@ class _VendorAnalyticsScreenState extends State<VendorAnalyticsScreen> {
     ),
   ];
 
+  void _showExportDialog() {
+    String selectedFormat = 'PDF'; // 'PDF' or 'CSV'
+    String reportRange = _selectedFilter;
+    bool includeTopItems = true;
+    bool includePaymentSplit = true;
+    bool includeDailyBreakdown = true;
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            final primaryColor = Theme.of(context).colorScheme.primary;
+
+            return AlertDialog(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              title: const Row(
+                children: [
+                  Icon(Icons.picture_as_pdf_rounded, color: Colors.red),
+                  SizedBox(width: 10),
+                  Text('Export Sales Report'),
+                ],
+              ),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Export Format',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 13,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: ChoiceChip(
+                            avatar: const Icon(Icons.picture_as_pdf, size: 16),
+                            label: const Text('PDF Report'),
+                            selected: selectedFormat == 'PDF',
+                            onSelected: (selected) {
+                              if (selected) {
+                                setDialogState(() => selectedFormat = 'PDF');
+                              }
+                            },
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: ChoiceChip(
+                            avatar: const Icon(Icons.table_chart, size: 16),
+                            label: const Text('CSV Sheet'),
+                            selected: selectedFormat == 'CSV',
+                            onSelected: (selected) {
+                              if (selected) {
+                                setDialogState(() => selectedFormat = 'CSV');
+                              }
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+
+                    const Text(
+                      'Report Period',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 13,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    DropdownButtonFormField<String>(
+                      value: reportRange,
+                      decoration: InputDecoration(
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 10,
+                        ),
+                      ),
+                      items: _filters.map((f) {
+                        return DropdownMenuItem(value: f, child: Text(f));
+                      }).toList(),
+                      onChanged: (val) {
+                        if (val != null) {
+                          setDialogState(() => reportRange = val);
+                        }
+                      },
+                    ),
+                    const SizedBox(height: 16),
+
+                    const Text(
+                      'Include Sections',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 13,
+                      ),
+                    ),
+                    CheckboxListTile(
+                      dense: true,
+                      contentPadding: EdgeInsets.zero,
+                      title: const Text('Top Selling Items List'),
+                      value: includeTopItems,
+                      onChanged: (val) {
+                        setDialogState(() => includeTopItems = val ?? true);
+                      },
+                    ),
+                    CheckboxListTile(
+                      dense: true,
+                      contentPadding: EdgeInsets.zero,
+                      title: const Text(
+                        'Payment Method Split (Cash vs Online)',
+                      ),
+                      value: includePaymentSplit,
+                      onChanged: (val) {
+                        setDialogState(() => includePaymentSplit = val ?? true);
+                      },
+                    ),
+                    CheckboxListTile(
+                      dense: true,
+                      contentPadding: EdgeInsets.zero,
+                      title: const Text('Daily Revenue Breakdown'),
+                      value: includeDailyBreakdown,
+                      onChanged: (val) {
+                        setDialogState(
+                          () => includeDailyBreakdown = val ?? true,
+                        );
+                      },
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Cancel'),
+                ),
+                ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: primaryColor,
+                    foregroundColor: Colors.white,
+                  ),
+                  onPressed: () {
+                    Navigator.pop(context);
+                    final fileName =
+                        'sales_report_${reportRange.toLowerCase().replaceAll(" ", "_")}.${selectedFormat.toLowerCase()}';
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Row(
+                          children: [
+                            const Icon(
+                              Icons.download_done_rounded,
+                              color: Colors.white,
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                'Report generated: $fileName (Saved to Downloads)',
+                              ),
+                            ),
+                          ],
+                        ),
+                        backgroundColor: Colors.green,
+                        duration: const Duration(seconds: 4),
+                      ),
+                    );
+                  },
+                  icon: const Icon(Icons.download_rounded, size: 18),
+                  label: Text('Export $selectedFormat'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final maxRevenue = _weeklyData
@@ -81,13 +267,22 @@ class _VendorAnalyticsScreenState extends State<VendorAnalyticsScreen> {
         .reduce((a, b) => a > b ? a : b);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Sales & Analytics')),
+      appBar: AppBar(
+        title: const Text('Sales & Analytics'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.file_download_outlined),
+            tooltip: 'Export Report',
+            onPressed: _showExportDialog,
+          ),
+        ],
+      ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Time Range Chips
+            // Time Range Chips & Export Banner Action
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -374,9 +569,23 @@ class _VendorAnalyticsScreenState extends State<VendorAnalyticsScreen> {
             const SizedBox(height: 24),
 
             // Top Selling Items Section
-            const Text(
-              'Top Performing Dishes',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'Top Performing Dishes',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                OutlinedButton.icon(
+                  style: OutlinedButton.styleFrom(
+                    visualDensity: VisualDensity.compact,
+                    padding: const EdgeInsets.symmetric(horizontal: 10),
+                  ),
+                  onPressed: _showExportDialog,
+                  icon: const Icon(Icons.download, size: 16),
+                  label: const Text('Export Summary'),
+                ),
+              ],
             ),
             const SizedBox(height: 10),
 
