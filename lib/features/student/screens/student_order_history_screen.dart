@@ -1,38 +1,25 @@
 import 'package:flutter/material.dart';
-
-class PastOrderItem {
-  final String name;
-  final int quantity;
-  final double unitPrice;
-
-  const PastOrderItem({
-    required this.name,
-    required this.quantity,
-    required this.unitPrice,
-  });
-
-  double get total => quantity * unitPrice;
-}
+import '../widgets/order_rating_dialog.dart';
 
 class PastOrder {
   final String id;
   final String tokenNumber;
   final String shopName;
-  final DateTime dateTime;
-  final List<PastOrderItem> items;
+  final String date;
   final double totalAmount;
-  final String paymentMethod;
-  final String status; // 'Completed', 'Cancelled'
+  final List<String> items;
+  bool isRated;
+  int? rating;
 
-  const PastOrder({
+  PastOrder({
     required this.id,
     required this.tokenNumber,
     required this.shopName,
-    required this.dateTime,
-    required this.items,
+    required this.date,
     required this.totalAmount,
-    required this.paymentMethod,
-    required this.status,
+    required this.items,
+    this.isRated = false,
+    this.rating,
   });
 }
 
@@ -45,218 +32,93 @@ class StudentOrderHistoryScreen extends StatefulWidget {
 }
 
 class _StudentOrderHistoryScreenState extends State<StudentOrderHistoryScreen> {
-  final List<PastOrder> mockOrderHistory = [
+  final List<PastOrder> _pastOrders = [
     PastOrder(
-      id: 'ORD-9842',
-      tokenNumber: '#089',
+      id: 'ord_102',
+      tokenNumber: '#102',
       shopName: 'Central Fast Food',
-      dateTime: DateTime.now().subtract(const Duration(days: 1, hours: 2)),
-      items: const [
-        PastOrderItem(name: 'Zinger Burger', quantity: 1, unitPrice: 350),
-        PastOrderItem(name: 'Masala Fries', quantity: 1, unitPrice: 150),
-      ],
+      date: '06 Nov 2026, 01:15 PM',
       totalAmount: 500.0,
-      paymentMethod: 'Cash on Pickup',
-      status: 'Completed',
+      items: ['1x Zinger Burger', '1x Masala Fries'],
+      isRated: false,
     ),
     PastOrder(
-      id: 'ORD-9120',
-      tokenNumber: '#042',
+      id: 'ord_99',
+      tokenNumber: '#099',
       shopName: 'Campus Chai & Snacks',
-      dateTime: DateTime.now().subtract(const Duration(days: 3, hours: 5)),
-      items: const [
-        PastOrderItem(name: 'Doodh Patti Chai', quantity: 2, unitPrice: 80),
-        PastOrderItem(name: 'Samosa', quantity: 2, unitPrice: 50),
-      ],
-      totalAmount: 260.0,
-      paymentMethod: 'Online Paid',
-      status: 'Completed',
+      date: '05 Nov 2026, 04:30 PM',
+      totalAmount: 200.0,
+      items: ['2x Doodh Patti Chai', '1x Samosa Chat'],
+      isRated: true,
+      rating: 5,
     ),
     PastOrder(
-      id: 'ORD-8811',
-      tokenNumber: '#012',
+      id: 'ord_91',
+      tokenNumber: '#091',
       shopName: 'Lahori Biryani & Karahi Corner',
-      dateTime: DateTime.now().subtract(const Duration(days: 5, hours: 1)),
-      items: const [
-        PastOrderItem(
-          name: 'Chicken Biryani Single',
-          quantity: 1,
-          unitPrice: 300,
-        ),
-      ],
+      date: '03 Nov 2026, 02:00 PM',
       totalAmount: 300.0,
-      paymentMethod: 'Cash on Pickup',
-      status: 'Cancelled',
+      items: ['1x Chicken Biryani Single'],
+      isRated: true,
+      rating: 4,
     ),
   ];
 
-  void _showReceiptModal(BuildContext context, PastOrder order) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) {
-        return Padding(
-          padding: EdgeInsets.only(
-            left: 20,
-            right: 20,
-            top: 20,
-            bottom: MediaQuery.of(context).viewInsets.bottom + 20,
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Bottomsheet Header
-              Center(
-                child: Container(
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade300,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Receipt ${order.id}',
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      Text(
-                        'Token ${order.tokenNumber}',
-                        style: TextStyle(
-                          color: Theme.of(context).colorScheme.primary,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: order.status == 'Completed'
-                          ? Colors.green.shade50
-                          : Colors.red.shade50,
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: Text(
-                      order.status.toUpperCase(),
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.bold,
-                        color: order.status == 'Completed'
-                            ? Colors.green
-                            : Colors.red,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              Text(
-                'Stall: ${order.shopName}',
-                style: const TextStyle(fontWeight: FontWeight.w600),
-              ),
-              Text(
-                'Date: ${_formatDateTime(order.dateTime)}',
-                style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
-              ),
-              const Divider(height: 24),
-
-              // Itemized Receipt List
-              const Text(
-                'Order Breakdown',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-              ),
-              const SizedBox(height: 8),
-              ...order.items.map(
-                (item) => Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 4.0),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text('${item.quantity}x ${item.name}'),
-                      Text('PKR ${item.total.toStringAsFixed(0)}'),
-                    ],
-                  ),
-                ),
-              ),
-              const Divider(height: 24),
-
-              // Total & Payment Method
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'Payment (${order.paymentMethod}):',
-                    style: TextStyle(color: Colors.grey.shade700, fontSize: 13),
-                  ),
-                  Text(
-                    'PKR ${order.totalAmount.toStringAsFixed(0)}',
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 20),
-
-              // Actions
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  onPressed: () {
-                    Navigator.pop(context);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(
-                          'Re-added items from ${order.shopName} to cart!',
-                        ),
-                      ),
-                    );
-                  },
-                  icon: const Icon(Icons.refresh_rounded),
-                  label: const Text('Reorder Same Meal'),
-                ),
-              ),
-            ],
+  void _openRatingModal(PastOrder order) async {
+    final result =
+        await showDialog >
+        (
+          context: context,
+          builder: (context) => OrderRatingDialog(
+            orderToken: order.tokenNumber,
+            shopName: order.shopName,
           ),
         );
-      },
-    );
-  }
 
-  String _formatDateTime(DateTime dt) {
-    return '${dt.day}/${dt.month}/${dt.year} at ${dt.hour}:${dt.minute.toString().padLeft(2, '0')}';
+    if (result != null) {
+      setState(() {
+        order.isRated = true;
+        order.rating = result['rating'] as int;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Thank you for rating ${order.shopName} ${result['rating']} Stars!',
+          ),
+          backgroundColor: Colors.green,
+        ),
+      );
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Order History & Receipts')),
-      body: mockOrderHistory.isEmpty
-          ? const Center(child: Text('No past orders found.'))
+      body: _pastOrders.isEmpty
+          ? Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.receipt_long_outlined,
+                    size: 64,
+                    color: Colors.grey.shade400,
+                  ),
+                  const SizedBox(height: 12),
+                  const Text(
+                    'No past receipts found',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                ],
+              ),
+            )
           : ListView.builder(
               padding: const EdgeInsets.all(16),
-              itemCount: mockOrderHistory.length,
+              itemCount: _pastOrders.length,
               itemBuilder: (context, index) {
-                final order = mockOrderHistory[index];
+                final order = _pastOrders[index];
 
                 return Card(
                   margin: const EdgeInsets.only(bottom: 14),
@@ -275,59 +137,89 @@ class _StudentOrderHistoryScreenState extends State<StudentOrderHistoryScreen> {
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
-                            Text(
-                              'PKR ${order.totalAmount.toStringAsFixed(0)}',
-                              style: TextStyle(
-                                fontSize: 15,
-                                fontWeight: FontWeight.bold,
-                                color: Theme.of(context).colorScheme.primary,
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.grey.shade200,
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: Text(
+                                order.tokenNumber,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 12,
+                                ),
                               ),
                             ),
                           ],
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          _formatDateTime(order.dateTime),
+                          order.date,
                           style: TextStyle(
                             fontSize: 12,
                             color: Colors.grey.shade600,
                           ),
                         ),
-                        const SizedBox(height: 8),
-                        Text(
-                          order.items
-                              .map((i) => '${i.quantity}x ${i.name}')
-                              .join(', '),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: Colors.grey.shade800,
+                        const Divider(height: 20),
+                        ...order.items.map(
+                          (item) => Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 2),
+                            child: Text(
+                              item,
+                              style: const TextStyle(fontSize: 13),
+                            ),
                           ),
                         ),
-                        const Divider(height: 20),
+                        const SizedBox(height: 12),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Text(
-                              order.paymentMethod,
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: Colors.grey.shade600,
+                              'PKR ${order.totalAmount.toStringAsFixed(0)}',
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
                               ),
                             ),
-                            OutlinedButton(
-                              style: OutlinedButton.styleFrom(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 12,
-                                  vertical: 6,
+                            if (order.isRated)
+                              Row(
+                                children: [
+                                  const Icon(
+                                    Icons.star_rounded,
+                                    color: Colors.amber,
+                                    size: 18,
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    '${order.rating}/5 Rated',
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 13,
+                                      color: Colors.amber,
+                                    ),
+                                  ),
+                                ],
+                              )
+                            else
+                              ElevatedButton.icon(
+                                style: ElevatedButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 6,
+                                  ),
+                                  visualDensity: VisualDensity.compact,
                                 ),
-                                visualDensity: VisualDensity.compact,
+                                onPressed: () => _openRatingModal(order),
+                                icon: const Icon(
+                                  Icons.star_outline_rounded,
+                                  size: 16,
+                                ),
+                                label: const Text('Rate Order'),
                               ),
-                              onPressed: () =>
-                                  _showReceiptModal(context, order),
-                              child: const Text('View Receipt'),
-                            ),
                           ],
                         ),
                       ],
