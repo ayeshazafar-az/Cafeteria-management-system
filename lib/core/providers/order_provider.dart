@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../utils/feedback_helper.dart';
 
 class LocalOrderItem {
   final String name;
@@ -110,6 +111,12 @@ class OrderProvider extends ChangeNotifier {
     final index = _orders.indexWhere((order) => order.id == orderId);
     if (index != -1) {
       _orders[index].status = newStatus;
+
+      // Trigger double-pulse haptic vibration & sound chime on READY transition
+      if (newStatus == 'ready') {
+        FeedbackHelper.triggerOrderReadyFeedback();
+      }
+
       notifyListeners();
     }
   }
