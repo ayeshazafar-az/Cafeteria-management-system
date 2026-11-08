@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../../core/providers/order_provider.dart';
+import '../widgets/animated_order_timeline.dart';
 
 class StudentOrdersScreen extends StatelessWidget {
   const StudentOrdersScreen({super.key});
@@ -9,9 +10,7 @@ class StudentOrdersScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('My Active Orders'),
-      ),
+      appBar: AppBar(title: const Text('My Active Orders')),
       body: Consumer<OrderProvider>(
         builder: (context, orderProvider, child) {
           final activeOrders = orderProvider.activeOrders;
@@ -47,18 +46,11 @@ class StudentOrdersScreen extends StatelessWidget {
             itemBuilder: (context, index) {
               final order = activeOrders[index];
 
-              final isPlaced = order.status == 'placed' ||
-                  order.status == 'preparing' ||
-                  order.status == 'ready';
-              final isPreparing =
-                  order.status == 'preparing' || order.status == 'ready';
-              final isReady = order.status == 'ready';
-
               return Card(
                 margin: const EdgeInsets.only(bottom: 16),
                 elevation: 3,
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(14),
+                  borderRadius: BorderRadius.circular(16),
                 ),
                 child: Padding(
                   padding: const EdgeInsets.all(16),
@@ -70,7 +62,9 @@ class StudentOrdersScreen extends StatelessWidget {
                         children: [
                           Container(
                             padding: const EdgeInsets.symmetric(
-                                horizontal: 10, vertical: 6),
+                              horizontal: 10,
+                              vertical: 6,
+                            ),
                             decoration: BoxDecoration(
                               color: Colors.blue.shade50,
                               borderRadius: BorderRadius.circular(8),
@@ -86,7 +80,9 @@ class StudentOrdersScreen extends StatelessWidget {
                           ),
                           Container(
                             padding: const EdgeInsets.symmetric(
-                                horizontal: 10, vertical: 6),
+                              horizontal: 10,
+                              vertical: 6,
+                            ),
                             decoration: BoxDecoration(
                               color: _getStatusBgColor(order.status),
                               borderRadius: BorderRadius.circular(8),
@@ -106,7 +102,9 @@ class StudentOrdersScreen extends StatelessWidget {
                       Text(
                         order.shopName,
                         style: const TextStyle(
-                            fontSize: 18, fontWeight: FontWeight.bold),
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                       const SizedBox(height: 4),
                       Text(
@@ -114,20 +112,18 @@ class StudentOrdersScreen extends StatelessWidget {
                             .map((i) => '${i.quantity}x ${i.name}')
                             .join(', '),
                         style: TextStyle(
-                            color: Colors.grey.shade700, fontSize: 13),
+                          color: Colors.grey.shade700,
+                          fontSize: 13,
+                        ),
                       ),
-                      const Divider(height: 24),
+                      const SizedBox(height: 20),
 
-                      // Order Timeline Steps
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceAround,
-                        children: [
-                          _buildStatusStep('Placed', isPlaced),
-                          _buildStatusStep('Preparing', isPreparing),
-                          _buildStatusStep('Ready', isReady),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
+                      // Custom Animated Status Timeline
+                      AnimatedOrderTimeline(status: order.status),
+
+                      const SizedBox(height: 20),
+                      const Divider(height: 1),
+                      const SizedBox(height: 12),
 
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -135,12 +131,16 @@ class StudentOrdersScreen extends StatelessWidget {
                           Text(
                             'Payment: ${order.paymentMethod}',
                             style: const TextStyle(
-                                fontSize: 12, fontWeight: FontWeight.w500),
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                            ),
                           ),
                           Text(
                             'PKR ${order.totalAmount.toStringAsFixed(0)}',
                             style: const TextStyle(
-                                fontSize: 16, fontWeight: FontWeight.bold),
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                         ],
                       ),
@@ -156,7 +156,7 @@ class StudentOrdersScreen extends StatelessWidget {
   }
 
   Color _getStatusBgColor(String status) {
-    switch (status) {
+    switch (status.toLowerCase()) {
       case 'placed':
         return Colors.blue.shade50;
       case 'preparing':
@@ -169,7 +169,7 @@ class StudentOrdersScreen extends StatelessWidget {
   }
 
   Color _getStatusTextColor(String status) {
-    switch (status) {
+    switch (status.toLowerCase()) {
       case 'placed':
         return Colors.blue;
       case 'preparing':
@@ -179,26 +179,5 @@ class StudentOrdersScreen extends StatelessWidget {
       default:
         return Colors.grey;
     }
-  }
-
-  Widget _buildStatusStep(String label, bool isDone) {
-    return Column(
-      children: [
-        Icon(
-          isDone ? Icons.check_circle : Icons.radio_button_unchecked,
-          color: isDone ? Colors.green : Colors.grey,
-          size: 20,
-        ),
-        const SizedBox(height: 4),
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 11,
-            fontWeight: isDone ? FontWeight.bold : FontWeight.normal,
-            color: isDone ? Colors.black : Colors.grey,
-          ),
-        ),
-      ],
-    );
   }
 }
