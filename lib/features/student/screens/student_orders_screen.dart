@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../../../core/providers/order_provider.dart';
 import '../widgets/animated_order_timeline.dart';
+import '../widgets/prep_countdown_timer.dart';
 
 class StudentOrdersScreen extends StatelessWidget {
   const StudentOrdersScreen({super.key});
@@ -116,7 +117,15 @@ class StudentOrdersScreen extends StatelessWidget {
                           fontSize: 13,
                         ),
                       ),
-                      const SizedBox(height: 20),
+                      const SizedBox(height: 14),
+
+                      // Live Preparation Countdown Banner
+                      PrepCountdownTimer(
+                        createdAt: order.createdAt,
+                        estimatedPrepMinutes: order.estimatedPrepMinutes,
+                        status: order.status,
+                      ),
+                      const SizedBox(height: 18),
 
                       // Custom Animated Status Timeline
                       AnimatedOrderTimeline(status: order.status),

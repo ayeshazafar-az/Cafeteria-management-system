@@ -24,6 +24,7 @@ class LocalOrder {
   final String specialInstructions;
   String status; // 'placed', 'preparing', 'ready', 'completed'
   final DateTime createdAt;
+  final int estimatedPrepMinutes;
 
   LocalOrder({
     required this.id,
@@ -36,6 +37,7 @@ class LocalOrder {
     required this.specialInstructions,
     required this.status,
     required this.createdAt,
+    this.estimatedPrepMinutes = 15,
   });
 }
 
@@ -57,6 +59,7 @@ class OrderProvider extends ChangeNotifier {
       specialInstructions: 'Extra spicy fries',
       status: 'preparing',
       createdAt: DateTime.now().subtract(const Duration(minutes: 5)),
+      estimatedPrepMinutes: 12,
     ),
     LocalOrder(
       id: 'ord_103',
@@ -70,7 +73,8 @@ class OrderProvider extends ChangeNotifier {
       paymentMethod: 'Online Payment',
       specialInstructions: '',
       status: 'placed',
-      createdAt: DateTime.now().subtract(const Duration(minutes: 10)),
+      createdAt: DateTime.now().subtract(const Duration(minutes: 2)),
+      estimatedPrepMinutes: 10,
     ),
   ];
 
@@ -86,6 +90,7 @@ class OrderProvider extends ChangeNotifier {
     required double totalAmount,
     required String paymentMethod,
     required String specialInstructions,
+    int estimatedPrepMinutes = 15,
   }) {
     _lastTokenNumber++;
     final tokenStr = '#$_lastTokenNumber';
@@ -100,6 +105,7 @@ class OrderProvider extends ChangeNotifier {
       specialInstructions: specialInstructions,
       status: 'placed',
       createdAt: DateTime.now(),
+      estimatedPrepMinutes: estimatedPrepMinutes,
     );
 
     _orders.insert(0, newOrder);
@@ -112,7 +118,6 @@ class OrderProvider extends ChangeNotifier {
     if (index != -1) {
       _orders[index].status = newStatus;
 
-      // Trigger double-pulse haptic vibration & sound chime on READY transition
       if (newStatus == 'ready') {
         FeedbackHelper.triggerOrderReadyFeedback();
       }
