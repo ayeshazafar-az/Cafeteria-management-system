@@ -156,13 +156,13 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
               ),
               _buildMetricTile(
                 'Active Stalls',
-                '${registeredStalls.where((s) => s.isActive).length}',
+                '\',
                 Icons.store_rounded,
                 Colors.orange,
               ),
               _buildMetricTile(
                 'Pending Approvals',
-                '${pendingRequests.length}',
+                '\',
                 Icons.pending_actions_rounded,
                 Colors.purple,
               ),
@@ -248,9 +248,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                         ],
                       ),
                       const SizedBox(height: 4),
-                      Text('Applicant: ${req.applicantName}'),
+                      Text('Applicant: \'),
                       Text(
-                        'Category: ${req.category}',
+                        'Category: \',
                         style: TextStyle(
                           fontSize: 12,
                           color: Colors.grey.shade700,
@@ -286,7 +286,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                               setState(() {
                                 registeredStalls.add(
                                   RegisteredStall(
-                                    id: DateTime.now().millisecondsSinceEpoch
+                                    id: DateTime.now()
+                                        .millisecondsSinceEpoch
                                         .toString(),
                                     name: req.stallName,
                                     ownerName: req.applicantName,
@@ -299,7 +300,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
                                   content: Text(
-                                    '${req.stallName} approved and added to campus stalls!',
+                                    '\ approved and added to campus stalls!',
                                   ),
                                   backgroundColor: Colors.green,
                                 ),
@@ -340,7 +341,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
               style: const TextStyle(fontWeight: FontWeight.bold),
             ),
             subtitle: Text(
-              'Owner: ${stall.ownerName} â€¢ Today: ${stall.totalOrdersToday} orders',
+              'Owner: \ • Today: \ orders',
             ),
             trailing: Switch(
               value: stall.isActive,
@@ -352,7 +353,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
                     content: Text(
-                      '${stall.name} set to ${val ? "Active" : "Disabled"}',
+                      '\ set to \',
                     ),
                   ),
                 );
