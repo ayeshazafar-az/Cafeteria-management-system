@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 
-import '../../../core/services/auth_service.dart';
 import '../../admin/screens/admin_dashboard_screen.dart';
-import '../../student/student_navigation_wrapper.dart';
-import '../../vendor/vendor_navigation_wrapper.dart';
+import '../../student/screens/student_main_screen.dart';
+import '../../vendor/screens/vendor_main_screen.dart';
+import 'vendor_registration_screen.dart';
 
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key});
@@ -14,85 +13,80 @@ class AuthScreen extends StatefulWidget {
 }
 
 class _AuthScreenState extends State<AuthScreen> {
-  bool isLogin = true;
-  bool isLoading = false;
-  String selectedRole = 'student'; // 'student', 'vendor', or 'admin'
+  final _formKey = GlobalKey<FormState>();
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
 
-  final TextEditingController nameController = TextEditingController();
-  final TextEditingController emailController = TextEditingController();
-  final TextEditingController passwordController = TextEditingController();
+  String _selectedRole = 'Student'; // 'Student', 'Vendor', 'Super Admin'
+  bool _obscurePassword = true;
+
+  final List<String> _roles = const ['Student', 'Vendor', 'Super Admin'];
+
+  @override
+  void initState() {
+    super.initState();
+    _applyDemoCredentials('Student');
+  }
 
   @override
   void dispose() {
-    nameController.dispose();
-    emailController.dispose();
-    passwordController.dispose();
+    _emailController.dispose();
+    _passwordController.dispose();
     super.dispose();
   }
 
-  Future<void> _submitAuth() async {
-    final email = emailController.text.trim();
-    final password = passwordController.text.trim();
-    final fullName = nameController.text.trim();
+  void _applyDemoCredentials(String role) {
+    setState(() {
+      _selectedRole = role;
+      switch (role) {
+        case 'Vendor':
+          _emailController.text = 'vendor@cafeteria.edu.pk';
+          _passwordController.text = 'vendor123';
+          break;
+        case 'Super Admin':
+          _emailController.text = 'admin@cafeteria.edu.pk';
+          _passwordController.text = 'admin123';
+          break;
+        case 'Student':
+        default:
+          _emailController.text = 'ayesha@student.edu.pk';
+          _passwordController.text = 'student123';
+          break;
+      }
+    });
+  }
 
-    if (email.isEmpty || password.isEmpty || (!isLogin && fullName.isEmpty)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please fill in all required fields.')),
-      );
-      return;
-    }
+  void _handleLogin() {
+    if (!_formKey.currentState!.validate()) return;
 
-    setState(() => isLoading = true);
-
-    final authService = Provider.of<AuthService>(context, listen: false);
-    String? errorMessage;
-
-    if (isLogin) {
-      errorMessage = await authService.signIn(email: email, password: password);
-    } else {
-      errorMessage = await authService.signUp(
-        email: email,
-        password: password,
-        fullName: fullName,
-        role: selectedRole,
-      );
-    }
-
-    if (!mounted) return;
-
-    if (errorMessage != null) {
-      setState(() => isLoading = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(errorMessage), backgroundColor: Colors.red),
-      );
-      return;
-    }
-
-    // Determine target screen based on authenticated role
-    final user = authService.currentUser;
-    String userRole = selectedRole;
-
-    if (user != null && isLogin) {
-      userRole = await authService.getUserRole(user.uid);
-    }
-
-    if (!mounted) return;
-
-    setState(() => isLoading = false);
-
+    final email = _emailController.text.trim().toLowerCase();
     Widget destinationScreen;
-    if (userRole == 'vendor') {
-      destinationScreen = const VendorNavigationWrapper();
-    } else if (userRole == 'admin') {
+
+    // Route based on selected role or explicit admin/vendor email prefix
+    if (_selectedRole == 'Super Admin' || email.startsWith('admin@')) {
       destinationScreen = const AdminDashboardScreen();
+    } else if (_selectedRole == 'Vendor' || email.startsWith('vendor@')) {
+      destinationScreen = const VendorMainScreen();
     } else {
-      destinationScreen = const StudentNavigationWrapper();
+      destinationScreen = const StudentMainScreen();
     }
 
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(builder: (context) => destinationScreen),
     );
+  }
+
+  IconData _getIconForRole(String role) {
+    switch (role) {
+      case 'Vendor':
+        return Icons.storefront_rounded;
+      case 'Super Admin':
+        return Icons.admin_panel_settings_rounded;
+      case 'Student':
+      default:
+        return Icons.school_rounded;
+    }
   }
 
   @override
@@ -104,157 +98,221 @@ class _AuthScreenState extends State<AuthScreen> {
         child: Center(
           child: SingleChildScrollView(
             padding: const EdgeInsets.all(24.0),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Icon(Icons.restaurant, size: 64, color: primaryColor),
-                const SizedBox(height: 12),
-                Text(
-                  'Campus Cafeteria',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 26,
-                    fontWeight: FontWeight.bold,
-                    color: primaryColor,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  isLogin
-                      ? 'Sign in to place or manage orders'
-                      : 'Create an account to get started',
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(color: Colors.grey, fontSize: 14),
-                ),
-                const SizedBox(height: 32),
-
-                if (!isLogin) ...[
-                  TextField(
-                    controller: nameController,
-                    decoration: InputDecoration(
-                      labelText: 'Full Name',
-                      prefixIcon: const Icon(Icons.person_outline),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 420),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    // App Brand Header
+                    CircleAvatar(
+                      radius: 38,
+                      backgroundColor: primaryColor.withOpacity(0.12),
+                      child: Icon(
+                        Icons.fastfood_rounded,
+                        size: 40,
+                        color: primaryColor,
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 16),
-                ],
-
-                TextField(
-                  controller: emailController,
-                  keyboardType: TextInputType.emailAddress,
-                  decoration: InputDecoration(
-                    labelText: 'Email Address',
-                    prefixIcon: const Icon(Icons.email_outlined),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-
-                TextField(
-                  controller: passwordController,
-                  obscureText: true,
-                  decoration: InputDecoration(
-                    labelText: 'Password',
-                    prefixIcon: const Icon(Icons.lock_outline),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 20),
-
-                if (!isLogin) ...[
-                  const Text(
-                    'Select Role:',
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                  ),
-                  const SizedBox(height: 8),
-                  Wrap(
-                    spacing: 8,
-                    children: [
-                      ChoiceChip(
-                        avatar: const Icon(Icons.school, size: 16),
-                        label: const Text('Student'),
-                        selected: selectedRole == 'student',
-                        onSelected: (selected) {
-                          if (selected)
-                            setState(() => selectedRole = 'student');
-                        },
-                      ),
-                      ChoiceChip(
-                        avatar: const Icon(Icons.store, size: 16),
-                        label: const Text('Vendor'),
-                        selected: selectedRole == 'vendor',
-                        onSelected: (selected) {
-                          if (selected) setState(() => selectedRole = 'vendor');
-                        },
-                      ),
-                      ChoiceChip(
-                        avatar: const Icon(
-                          Icons.admin_panel_settings,
-                          size: 16,
-                        ),
-                        label: const Text('Admin'),
-                        selected: selectedRole == 'admin',
-                        onSelected: (selected) {
-                          if (selected) setState(() => selectedRole = 'admin');
-                        },
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 28),
-                ],
-
-                SizedBox(
-                  height: 50,
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: primaryColor,
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+                    const SizedBox(height: 16),
+                    const Text(
+                      'Campus Cafeteria',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 26,
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
-                    onPressed: isLoading ? null : _submitAuth,
-                    child: isLoading
-                        ? const SizedBox(
-                            height: 20,
-                            width: 20,
-                            child: CircularProgressIndicator(
-                              color: Colors.white,
-                              strokeWidth: 2,
-                            ),
-                          )
-                        : Text(
-                            isLogin ? 'Sign In' : 'Create Account',
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
+                    const SizedBox(height: 4),
+                    Text(
+                      'Smart Food Ordering & Stall Management',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: Colors.grey.shade600,
+                      ),
+                    ),
+                    const SizedBox(height: 28),
+
+                    // Role Switcher Selector
+                    const Text(
+                      'Select Portal Role',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: _roles.map((role) {
+                        final isSelected = _selectedRole == role;
+                        return Expanded(
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 4),
+                            child: InkWell(
+                              borderRadius: BorderRadius.circular(12),
+                              onTap: () => _applyDemoCredentials(role),
+                              child: AnimatedContainer(
+                                duration: const Duration(milliseconds: 200),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 12,
+                                  horizontal: 6,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: isSelected
+                                      ? primaryColor
+                                      : Theme.of(context).cardColor,
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(
+                                    color: isSelected
+                                        ? primaryColor
+                                        : Colors.grey.shade300,
+                                    width: 1.5,
+                                  ),
+                                ),
+                                child: Column(
+                                  children: [
+                                    Icon(
+                                      _getIconForRole(role),
+                                      size: 20,
+                                      color: isSelected
+                                          ? Colors.white
+                                          : Colors.grey.shade700,
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      role,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.bold,
+                                        color: isSelected
+                                            ? Colors.white
+                                            : Colors.grey.shade800,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
                             ),
                           ),
-                  ),
-                ),
-                const SizedBox(height: 16),
+                        );
+                      }).toList(),
+                    ),
+                    const SizedBox(height: 20),
 
-                TextButton(
-                  onPressed: () {
-                    setState(() {
-                      isLogin = !isLogin;
-                    });
-                  },
-                  child: Text(
-                    isLogin
-                        ? "Don't have an account? Sign Up"
-                        : 'Already have an account? Sign In',
-                  ),
+                    // Email Field
+                    TextFormField(
+                      controller: _emailController,
+                      keyboardType: TextInputType.emailAddress,
+                      validator: (val) {
+                        if (val == null || !val.contains('@')) {
+                          return 'Please enter a valid campus email';
+                        }
+                        return null;
+                      },
+                      decoration: InputDecoration(
+                        labelText: 'Campus Email',
+                        prefixIcon: const Icon(Icons.email_outlined),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+
+                    // Password Field
+                    TextFormField(
+                      controller: _passwordController,
+                      obscureText: _obscurePassword,
+                      validator: (val) {
+                        if (val == null || val.length < 4) {
+                          return 'Password must be at least 4 characters';
+                        }
+                        return null;
+                      },
+                      decoration: InputDecoration(
+                        labelText: 'Password',
+                        prefixIcon: const Icon(Icons.lock_outline),
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                            _obscurePassword
+                                ? Icons.visibility_off_outlined
+                                : Icons.visibility_outlined,
+                          ),
+                          onPressed: () {
+                            setState(() {
+                              _obscurePassword = !_obscurePassword;
+                            });
+                          },
+                        ),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+
+                    // Sign In Button
+                    SizedBox(
+                      height: 50,
+                      child: ElevatedButton.icon(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: primaryColor,
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        onPressed: _handleLogin,
+                        icon: const Icon(Icons.login_rounded),
+                        label: Text(
+                          'Sign In as $_selectedRole',
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+
+                    // New Vendor Booth Application Link
+                    const Divider(),
+                    const SizedBox(height: 8),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          'Want to open a food stall?',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: Colors.grey.shade600,
+                          ),
+                        ),
+                        TextButton(
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) =>
+                                    const VendorRegistrationScreen(),
+                              ),
+                            );
+                          },
+                          child: const Text(
+                            'Apply for a Booth',
+                            style: TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
           ),
         ),
