@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/providers/cart_provider.dart';
+import '../widgets/dish_customization_sheet.dart';
 
 class CampusDishSearchItem {
   final String id;
@@ -42,8 +43,7 @@ class _StudentGlobalSearchScreenState extends State<StudentGlobalSearchScreen> {
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
   String _selectedCategory = 'All';
-  String _sortBy =
-      'Popular'; // 'Popular', 'Price: Low to High', 'Price: High to Low'
+  String _sortBy = 'Popular';
   bool _onlyAvailable = false;
 
   final List<String> _categories = const [
@@ -187,9 +187,7 @@ class _StudentGlobalSearchScreenState extends State<StudentGlobalSearchScreen> {
     final results = _allCampusDishes.where((dish) {
       final matchesCategory =
           _selectedCategory == 'All' || dish.category == _selectedCategory;
-
       final matchesAvailability = !_onlyAvailable || dish.isAvailable;
-
       final matchesSearch =
           query.isEmpty ||
           dish.name.toLowerCase().contains(query) ||
@@ -223,12 +221,10 @@ class _StudentGlobalSearchScreenState extends State<StudentGlobalSearchScreen> {
       appBar: AppBar(title: const Text('Explore Campus Menu')),
       body: Column(
         children: [
-          // Search Bar & Sort Row
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
             child: TextField(
               controller: _searchController,
-              autofocus: false,
               onChanged: (val) => setState(() => _searchQuery = val),
               decoration: InputDecoration(
                 hintText: 'Search burgers, biryani, chai, or stalls...',
@@ -250,7 +246,6 @@ class _StudentGlobalSearchScreenState extends State<StudentGlobalSearchScreen> {
             ),
           ),
 
-          // Horizontal Category Chips
           SizedBox(
             height: 44,
             child: ListView.builder(
@@ -287,7 +282,6 @@ class _StudentGlobalSearchScreenState extends State<StudentGlobalSearchScreen> {
             ),
           ),
 
-          // Filter & Sort Toolbar
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
             child: Row(
@@ -327,7 +321,6 @@ class _StudentGlobalSearchScreenState extends State<StudentGlobalSearchScreen> {
           ),
           const Divider(height: 1),
 
-          // Results Count Header
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 10, 16, 4),
             child: Row(
@@ -367,7 +360,6 @@ class _StudentGlobalSearchScreenState extends State<StudentGlobalSearchScreen> {
             ),
           ),
 
-          // Search Results List
           Expanded(
             child: dishes.isEmpty
                 ? Center(
@@ -403,8 +395,9 @@ class _StudentGlobalSearchScreenState extends State<StudentGlobalSearchScreen> {
                     itemCount: dishes.length,
                     itemBuilder: (context, index) {
                       final dish = dishes[index];
-                      final cartItem = cartProvider.items[dish.id];
-                      final count = cartItem?.quantity ?? 0;
+                      final matchingCount = cartProvider.items.values
+                          .where((item) => item.id.startsWith(dish.id))
+                          .fold<int>(0, (sum, item) => sum + item.quantity);
 
                       return Card(
                         margin: const EdgeInsets.only(bottom: 12),
@@ -557,60 +550,91 @@ class _StudentGlobalSearchScreenState extends State<StudentGlobalSearchScreen> {
                                         ),
                                       ),
                                     )
-                                  else if (count == 0)
-                                    ElevatedButton.icon(
-                                      style: ElevatedButton.styleFrom(
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 14,
-                                          vertical: 8,
-                                        ),
-                                        visualDensity: VisualDensity.compact,
-                                      ),
-                                      onPressed: () {
-                                        cartProvider.addItem(
-                                          shopId: dish.shopId,
-                                          shopName: dish.shopName,
-                                          itemId: dish.id,
-                                          name: dish.name,
-                                          price: dish.price,
-                                        );
-                                        ScaffoldMessenger.of(
-                                          context,
-                                        ).showSnackBar(
-                                          SnackBar(
-                                            content: Text(
-                                              '${dish.name} added to cart!',
+                                  else
+                                    Row(
+                                      children: [
+                                        if (matchingCount > 0) ...[
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 8,
+                                              vertical: 5,
                                             ),
-                                            duration: const Duration(
-                                              seconds: 1,
+                                            decoration: BoxDecoration(
+                                              color: AppColors.primaryLight,
+                                              borderRadius:
+                                                  BorderRadius.circular(8),
+                                            ),
+                                            child: Text(
+                                              '$matchingCount in cart',
+                                              style: const TextStyle(
+                                                fontSize: 11,
+                                                fontWeight: FontWeight.bold,
+                                                color: AppColors.primary,
+                                              ),
                                             ),
                                           ),
-                                        );
-                                      },
-                                      icon: const Icon(
-                                        Icons.add_shopping_cart_rounded,
-                                        size: 16,
-                                      ),
-                                      label: const Text('Add to Cart'),
-                                    )
-                                  else
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 10,
-                                        vertical: 5,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: AppColors.primaryLight,
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
-                                      child: Text(
-                                        '$count in cart',
-                                        style: const TextStyle(
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.bold,
-                                          color: AppColors.primary,
+                                          const SizedBox(width: 8),
+                                        ],
+                                        OutlinedButton.icon(
+                                          style: OutlinedButton.styleFrom(
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 10,
+                                              vertical: 6,
+                                            ),
+                                            visualDensity:
+                                                VisualDensity.compact,
+                                          ),
+                                          onPressed: () {
+                                            DishCustomizationSheet.show(
+                                              context,
+                                              itemId: dish.id,
+                                              itemName: dish.name,
+                                              description: dish.description,
+                                              basePrice: dish.price,
+                                              shopId: dish.shopId,
+                                              shopName: dish.shopName,
+                                            );
+                                          },
+                                          icon: const Icon(
+                                            Icons.tune_rounded,
+                                            size: 15,
+                                          ),
+                                          label: const Text('Customize'),
                                         ),
-                                      ),
+                                        const SizedBox(width: 6),
+                                        ElevatedButton(
+                                          style: ElevatedButton.styleFrom(
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 12,
+                                              vertical: 6,
+                                            ),
+                                            visualDensity:
+                                                VisualDensity.compact,
+                                          ),
+                                          onPressed: () {
+                                            cartProvider.addItem(
+                                              shopId: dish.shopId,
+                                              shopName: dish.shopName,
+                                              itemId: dish.id,
+                                              name: dish.name,
+                                              price: dish.price,
+                                            );
+                                            ScaffoldMessenger.of(
+                                              context,
+                                            ).showSnackBar(
+                                              SnackBar(
+                                                content: Text(
+                                                  '${dish.name} added to cart!',
+                                                ),
+                                                duration: const Duration(
+                                                  seconds: 1,
+                                                ),
+                                              ),
+                                            );
+                                          },
+                                          child: const Text('+ Add'),
+                                        ),
+                                      ],
                                     ),
                                 ],
                               ),
