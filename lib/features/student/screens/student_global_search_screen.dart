@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/providers/cart_provider.dart';
 import '../widgets/dish_customization_sheet.dart';
+import '../widgets/floating_cart_bar.dart';
 
 class CampusDishSearchItem {
   final String id;
@@ -113,8 +114,7 @@ class _StudentGlobalSearchScreenState extends State<StudentGlobalSearchScreen> {
     CampusDishSearchItem(
       id: 'm5',
       name: 'Aloo Cheese Paratha',
-      description:
-          'Flaky pan-fried paratha stuffed with spiced potato & cheddar',
+      description: 'Flaky pan-fried paratha stuffed with spiced potato & cheddar',
       shopId: 's2',
       shopName: 'Campus Chai & Snacks',
       category: 'Snacks & Sides',
@@ -126,8 +126,7 @@ class _StudentGlobalSearchScreenState extends State<StudentGlobalSearchScreen> {
     CampusDishSearchItem(
       id: 'm6',
       name: 'Chicken Biryani Single',
-      description:
-          'Aromatic basmati rice cooked with tender spiced chicken & raita',
+      description: 'Aromatic basmati rice cooked with tender spiced chicken & raita',
       shopId: 's4',
       shopName: 'Lahori Biryani & Karahi Corner',
       category: 'Desi',
@@ -139,8 +138,7 @@ class _StudentGlobalSearchScreenState extends State<StudentGlobalSearchScreen> {
     CampusDishSearchItem(
       id: 'm7',
       name: 'Chicken Karahi Half',
-      description:
-          'Traditional tomato & ginger chicken karahi served with 2 naans',
+      description: 'Traditional tomato & ginger chicken karahi served with 2 naans',
       shopId: 's4',
       shopName: 'Lahori Biryani & Karahi Corner',
       category: 'Desi',
@@ -188,8 +186,7 @@ class _StudentGlobalSearchScreenState extends State<StudentGlobalSearchScreen> {
       final matchesCategory =
           _selectedCategory == 'All' || dish.category == _selectedCategory;
       final matchesAvailability = !_onlyAvailable || dish.isAvailable;
-      final matchesSearch =
-          query.isEmpty ||
+      final matchesSearch = query.isEmpty ||
           dish.name.toLowerCase().contains(query) ||
           dish.shopName.toLowerCase().contains(query) ||
           dish.description.toLowerCase().contains(query) ||
@@ -203,9 +200,7 @@ class _StudentGlobalSearchScreenState extends State<StudentGlobalSearchScreen> {
     } else if (_sortBy == 'Price: High to Low') {
       results.sort((a, b) => b.price.compareTo(a.price));
     } else {
-      results.sort(
-        (a, b) => (b.isPopular ? 1 : 0).compareTo(a.isPopular ? 1 : 0),
-      );
+      results.sort((a, b) => (b.isPopular ? 1 : 0).compareTo(a.isPopular ? 1 : 0));
     }
 
     return results;
@@ -218,7 +213,10 @@ class _StudentGlobalSearchScreenState extends State<StudentGlobalSearchScreen> {
     final dishes = _filteredDishes;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Explore Campus Menu')),
+      appBar: AppBar(
+        title: const Text('Explore Campus Menu'),
+      ),
+      bottomNavigationBar: const FloatingCartBar(),
       body: Column(
         children: [
           Padding(
@@ -264,9 +262,8 @@ class _StudentGlobalSearchScreenState extends State<StudentGlobalSearchScreen> {
                     selectedColor: primaryColor,
                     labelStyle: TextStyle(
                       fontSize: 12,
-                      fontWeight: isSelected
-                          ? FontWeight.bold
-                          : FontWeight.normal,
+                      fontWeight:
+                          isSelected ? FontWeight.bold : FontWeight.normal,
                       color: isSelected
                           ? Colors.white
                           : Theme.of(context).textTheme.bodyMedium?.color,
@@ -391,7 +388,7 @@ class _StudentGlobalSearchScreenState extends State<StudentGlobalSearchScreen> {
                     ),
                   )
                 : ListView.builder(
-                    padding: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 84),
                     itemCount: dishes.length,
                     itemBuilder: (context, index) {
                       final dish = dishes[index];
@@ -435,9 +432,9 @@ class _StudentGlobalSearchScreenState extends State<StudentGlobalSearchScreen> {
                                               Container(
                                                 padding:
                                                     const EdgeInsets.symmetric(
-                                                      horizontal: 6,
-                                                      vertical: 2,
-                                                    ),
+                                                  horizontal: 6,
+                                                  vertical: 2,
+                                                ),
                                                 decoration: BoxDecoration(
                                                   color: Colors.orange.shade50,
                                                   borderRadius:
@@ -619,16 +616,14 @@ class _StudentGlobalSearchScreenState extends State<StudentGlobalSearchScreen> {
                                               name: dish.name,
                                               price: dish.price,
                                             );
-                                            ScaffoldMessenger.of(
-                                              context,
-                                            ).showSnackBar(
+                                            ScaffoldMessenger.of(context)
+                                                .showSnackBar(
                                               SnackBar(
                                                 content: Text(
                                                   '${dish.name} added to cart!',
                                                 ),
-                                                duration: const Duration(
-                                                  seconds: 1,
-                                                ),
+                                                duration:
+                                                    const Duration(seconds: 1),
                                               ),
                                             );
                                           },
