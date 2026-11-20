@@ -1,14 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import 'core/theme/app_theme.dart';
 import 'core/providers/cart_provider.dart';
 import 'core/providers/order_provider.dart';
 import 'core/providers/theme_provider.dart';
+import 'core/services/local_storage_service.dart';
+import 'core/theme/app_theme.dart';
 import 'features/auth/screens/auth_screen.dart';
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await LocalStorageService.init();
   runApp(const CafeteriaApp());
 }
 

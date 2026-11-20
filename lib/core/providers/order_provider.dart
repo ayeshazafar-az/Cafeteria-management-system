@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../services/local_storage_service.dart';
 import '../utils/feedback_helper.dart';
 
 class LocalOrderItem {
@@ -11,6 +12,20 @@ class LocalOrderItem {
     required this.quantity,
     required this.price,
   });
+
+  Map<String, dynamic> toJson() => {
+    'name': name,
+    'quantity': quantity,
+    'price': price,
+  };
+
+  factory LocalOrderItem.fromJson(Map<String, dynamic> json) {
+    return LocalOrderItem(
+      name: json['name'] as String,
+      quantity: json['quantity'] as int,
+      price: (json['price'] as num).toDouble(),
+    );
+  }
 }
 
 class LocalOrder {
@@ -39,6 +54,40 @@ class LocalOrder {
     required this.createdAt,
     this.estimatedPrepMinutes = 15,
   });
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'tokenNumber': tokenNumber,
+    'shopName': shopName,
+    'studentName': studentName,
+    'items': items.map((e) => e.toJson()).toList(),
+    'totalAmount': totalAmount,
+    'paymentMethod': paymentMethod,
+    'specialInstructions': specialInstructions,
+    'status': status,
+    'createdAt': createdAt.toIso8601String(),
+    'estimatedPrepMinutes': estimatedPrepMinutes,
+  };
+
+  factory LocalOrder.fromJson(Map<String, dynamic> json) {
+    return LocalOrder(
+      id: json['id'] as String,
+      tokenNumber: json['tokenNumber'] as String,
+      shopName: json['shopName'] as String,
+      studentName: json['studentName'] as String,
+      items: (json['items'] as List<dynamic>)
+          .map(
+            (e) => LocalOrderItem.fromJson(Map<String, dynamic>.from(e as Map)),
+          )
+          .toList(),
+      totalAmount: (json['totalAmount'] as num).toDouble(),
+      paymentMethod: json['paymentMethod'] as String,
+      specialInstructions: json['specialInstructions'] as String? ?? '',
+      status: json['status'] as String,
+      createdAt: DateTime.parse(json['createdAt'] as String),
+      estimatedPrepMinutes: json['estimatedPrepMinutes'] as int? ?? 15,
+    );
+  }
 }
 
 class OrderProvider extends ChangeNotifier {
@@ -78,10 +127,44 @@ class OrderProvider extends ChangeNotifier {
     ),
   ];
 
+  OrderProvider() {
+    loadPersistedOrders();
+  }
+
   List<LocalOrder> get activeOrders =>
       _orders.where((order) => order.status != 'completed').toList();
 
   List<LocalOrder> get allOrders => List.unmodifiable(_orders);
+
+  Future<void> loadPersistedOrders() async {
+    final savedToken = await LocalStorageService.loadInt(
+      LocalStorageService.lastTokenKey,
+    );
+    if (savedToken != null) {
+      _lastTokenNumber = savedToken;
+    }
+
+    final savedList = await LocalStorageService.loadJsonList(
+      LocalStorageService.ordersKey,
+    );
+    if (savedList != null) {
+      _orders
+        ..clear()
+        ..addAll(savedList.map(LocalOrder.fromJson));
+      notifyListeners();
+    }
+  }
+
+  Future<void> _persistOrders() async {
+    await LocalStorageService.saveInt(
+      LocalStorageService.lastTokenKey,
+      _lastTokenNumber,
+    );
+    await LocalStorageService.saveJsonList(
+      LocalStorageService.ordersKey,
+      _orders.map((o) => o.toJson()).toList(),
+    );
+  }
 
   String placeOrder({
     required String shopName,
@@ -109,6 +192,7 @@ class OrderProvider extends ChangeNotifier {
     );
 
     _orders.insert(0, newOrder);
+    _persistOrders();
     notifyListeners();
     return tokenStr;
   }
@@ -122,6 +206,7 @@ class OrderProvider extends ChangeNotifier {
         FeedbackHelper.triggerOrderReadyFeedback();
       }
 
+      _persistOrders();
       notifyListeners();
     }
   }

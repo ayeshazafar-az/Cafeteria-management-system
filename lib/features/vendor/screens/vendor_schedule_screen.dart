@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/services/local_storage_service.dart';
 
 class DaySchedule {
   final String dayName;
@@ -12,6 +13,30 @@ class DaySchedule {
     required this.openTime,
     required this.closeTime,
   });
+
+  Map<String, dynamic> toJson() => {
+    'dayName': dayName,
+    'isOpen': isOpen,
+    'openHour': openTime.hour,
+    'openMinute': openTime.minute,
+    'closeHour': closeTime.hour,
+    'closeMinute': closeTime.minute,
+  };
+
+  factory DaySchedule.fromJson(Map<String, dynamic> json) {
+    return DaySchedule(
+      dayName: json['dayName'] as String,
+      isOpen: json['isOpen'] as bool? ?? true,
+      openTime: TimeOfDay(
+        hour: json['openHour'] as int? ?? 8,
+        minute: json['openMinute'] as int? ?? 0,
+      ),
+      closeTime: TimeOfDay(
+        hour: json['closeHour'] as int? ?? 17,
+        minute: json['closeMinute'] as int? ?? 0,
+      ),
+    );
+  }
 }
 
 class VendorScheduleScreen extends StatefulWidget {
@@ -26,7 +51,7 @@ class _VendorScheduleScreenState extends State<VendorScheduleScreen> {
   bool _isManualOverrideClosed = false;
   int _defaultPrepMinutes = 15;
 
-  final List<DaySchedule> _schedules = [
+  List<DaySchedule> _schedules = [
     DaySchedule(
       dayName: 'Monday',
       isOpen: true,
@@ -71,6 +96,35 @@ class _VendorScheduleScreenState extends State<VendorScheduleScreen> {
     ),
   ];
 
+  @override
+  void initState() {
+    super.initState();
+    _loadSavedSchedule();
+  }
+
+  Future<void> _loadSavedSchedule() async {
+    final saved = await LocalStorageService.loadJsonMap(
+      LocalStorageService.stallSettingsKey,
+    );
+    if (saved == null || !mounted) return;
+
+    setState(() {
+      _autoCloseSchedule = saved['autoCloseSchedule'] as bool? ?? true;
+      _isManualOverrideClosed =
+          saved['isManualOverrideClosed'] as bool? ?? false;
+      _defaultPrepMinutes = saved['defaultPrepMinutes'] as int? ?? 15;
+
+      final rawDays = saved['days'] as List<dynamic>?;
+      if (rawDays != null && rawDays.isNotEmpty) {
+        _schedules = rawDays
+            .map(
+              (e) => DaySchedule.fromJson(Map<String, dynamic>.from(e as Map)),
+            )
+            .toList();
+      }
+    });
+  }
+
   Future<void> _pickTime(
     BuildContext context,
     DaySchedule schedule,
@@ -93,14 +147,25 @@ class _VendorScheduleScreenState extends State<VendorScheduleScreen> {
     }
   }
 
-  void _saveSchedule() {
+  Future<void> _saveSchedule() async {
+    await LocalStorageService.saveJsonMap(
+      LocalStorageService.stallSettingsKey,
+      {
+        'autoCloseSchedule': _autoCloseSchedule,
+        'isManualOverrideClosed': _isManualOverrideClosed,
+        'defaultPrepMinutes': _defaultPrepMinutes,
+        'days': _schedules.map((s) => s.toJson()).toList(),
+      },
+    );
+
+    if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
         content: Row(
           children: [
             Icon(Icons.check_circle_rounded, color: Colors.white),
             SizedBox(width: 8),
-            Text('Stall operating hours & prep defaults saved!'),
+            Text('Stall operating hours & prep defaults saved locally!'),
           ],
         ),
         backgroundColor: Colors.green,
@@ -120,7 +185,6 @@ class _VendorScheduleScreenState extends State<VendorScheduleScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Master Operational Card
             Card(
               elevation: 2,
               shape: RoundedRectangleBorder(
@@ -161,7 +225,7 @@ class _VendorScheduleScreenState extends State<VendorScheduleScreen> {
                         Icons.power_settings_new_rounded,
                         color: Colors.red,
                       ),
-                      title: const Text('Emergency Emergency Close'),
+                      title: const Text('Emergency Stall Close'),
                       subtitle: const Text(
                         'Instantly mark stall as CLOSED regardless of schedule',
                       ),
@@ -239,7 +303,6 @@ class _VendorScheduleScreenState extends State<VendorScheduleScreen> {
             ),
             const SizedBox(height: 12),
 
-            // Weekly Schedule List
             ListView.builder(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
