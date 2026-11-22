@@ -48,6 +48,7 @@ class CartProvider extends ChangeNotifier {
 
   Map<String, CartItem> get items => Map.unmodifiable(_items);
 
+  int get totalItemCount => totalItems;
   int get totalItems =>
       _items.values.fold<int>(0, (sum, item) => sum + item.quantity);
 

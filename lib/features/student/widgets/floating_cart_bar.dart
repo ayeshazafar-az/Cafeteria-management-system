@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../../core/providers/cart_provider.dart';
-import '../screens/student_cart_screen.dart';
+import '../screens/checkout_screen.dart';
 
 class FloatingCartBar extends StatelessWidget {
   final VoidCallback? onTapOverride;
@@ -51,7 +51,7 @@ class FloatingCartBar extends StatelessWidget {
                     padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
                     child: Material(
                       elevation: 6,
-                      shadowColor: primaryColor.withOpacity(0.35),
+                      shadowColor: primaryColor.withValues(alpha: 0.35),
                       borderRadius: BorderRadius.circular(16),
                       color: primaryColor,
                       child: InkWell(
@@ -61,8 +61,7 @@ class FloatingCartBar extends StatelessWidget {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (context) =>
-                                      const StudentCartScreen(),
+                                  builder: (context) => const CheckoutScreen(),
                                 ),
                               );
                             },
@@ -73,14 +72,13 @@ class FloatingCartBar extends StatelessWidget {
                           ),
                           child: Row(
                             children: [
-                              // Item Quantity Badge
                               Container(
                                 padding: const EdgeInsets.symmetric(
                                   horizontal: 10,
                                   vertical: 5,
                                 ),
                                 decoration: BoxDecoration(
-                                  color: Colors.white.withOpacity(0.2),
+                                  color: Colors.white.withValues(alpha: 0.2),
                                   borderRadius: BorderRadius.circular(10),
                                 ),
                                 child: Text(
@@ -93,8 +91,6 @@ class FloatingCartBar extends StatelessWidget {
                                 ),
                               ),
                               const SizedBox(width: 12),
-
-                              // Stall Name & View Cart Label
                               Expanded(
                                 child: Column(
                                   mainAxisSize: MainAxisSize.min,
@@ -114,15 +110,14 @@ class FloatingCartBar extends StatelessWidget {
                                         maxLines: 1,
                                         overflow: TextOverflow.ellipsis,
                                         style: TextStyle(
-                                          color: Colors.white.withOpacity(0.85),
+                                          color: Colors.white
+                                              .withValues(alpha: 0.85),
                                           fontSize: 11,
                                         ),
                                       ),
                                   ],
                                 ),
                               ),
-
-                              // Live Subtotal + Arrow
                               Text(
                                 'PKR ${totalPrice.toStringAsFixed(0)}',
                                 style: const TextStyle(
