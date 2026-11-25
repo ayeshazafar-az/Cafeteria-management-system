@@ -1,21 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../auth/screens/auth_screen.dart';
-
-class PendingVendorRequest {
-  final String id;
-  final String applicantName;
-  final String stallName;
-  final String category;
-  final String requestDate;
-
-  const PendingVendorRequest({
-    required this.id,
-    required this.applicantName,
-    required this.stallName,
-    required this.category,
-    required this.requestDate,
-  });
-}
+import 'admin_stall_approval_detail_screen.dart';
 
 class RegisteredStall {
   final String id;
@@ -41,20 +26,50 @@ class AdminDashboardScreen extends StatefulWidget {
 }
 
 class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
-  final List<PendingVendorRequest> pendingRequests = [
-    const PendingVendorRequest(
+  final List<VendorApplication> _applications = [
+    VendorApplication(
       id: 'req_1',
-      applicantName: 'Usman Ghani',
       stallName: 'Pizza & Pasta Hub',
-      category: 'Italian / Fast Food',
-      requestDate: '18 Oct 2026',
+      applicantName: 'Usman Ghani',
+      email: 'usman.pizza@vendor.pk',
+      phone: '0300-5544332',
+      cnic: '61101-4829103-1',
+      requestedCategory: 'Italian / Fast Food',
+      proposedStallNumber: 'Stall #A-04',
+      submissionDate: '18 Oct 2026',
+      sampleMenuItems: const [
+        'Chicken Fajita Pizza',
+        'Creamy Alfredo Pasta',
+        'Garlic Bread Supreme',
+      ],
+      documentsVerified: {
+        'CNIC Copy': true,
+        'Food Hygiene Certificate': true,
+        'Campus NOC & Lease Agreement': false,
+      },
+      status: 'pending',
     ),
-    const PendingVendorRequest(
+    VendorApplication(
       id: 'req_2',
-      applicantName: 'Tariq Mahmood',
       stallName: 'Fresh Fruit Juice Bar',
-      category: 'Beverages',
-      requestDate: '17 Oct 2026',
+      applicantName: 'Tariq Mahmood',
+      email: 'tariq.juice@vendor.pk',
+      phone: '0333-8941205',
+      cnic: '61101-9384712-5',
+      requestedCategory: 'Beverages',
+      proposedStallNumber: 'Kiosk #C-02',
+      submissionDate: '17 Oct 2026',
+      sampleMenuItems: const [
+        'Fresh Orange Juice',
+        'Mint Margarita',
+        'Mango Shake',
+      ],
+      documentsVerified: {
+        'CNIC Copy': true,
+        'Food Hygiene Certificate': true,
+        'Campus NOC & Lease Agreement': true,
+      },
+      status: 'pending',
     ),
   ];
 
@@ -82,6 +97,43 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     ),
   ];
 
+  List<VendorApplication> get _pendingApplications =>
+      _applications.where((app) => app.status == 'pending').toList();
+
+  Future<void> _openApplicationDetail(VendorApplication application) async {
+    final previousStatus = application.status;
+
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) =>
+            AdminStallApprovalDetailScreen(application: application),
+      ),
+    );
+
+    if (!mounted) return;
+
+    // If approved on the detail screen, register the new stall into All Stalls
+    if (previousStatus == 'pending' && application.status == 'approved') {
+      final alreadyAdded = registeredStalls.any(
+        (s) => s.name.toLowerCase() == application.stallName.toLowerCase(),
+      );
+      if (!alreadyAdded) {
+        registeredStalls.add(
+          RegisteredStall(
+            id: 'st_${DateTime.now().millisecondsSinceEpoch}',
+            name: application.stallName,
+            ownerName: application.applicantName,
+            isActive: true,
+            totalOrdersToday: 0,
+          ),
+        );
+      }
+    }
+
+    setState(() {});
+  }
+
   void _signOut(BuildContext context) {
     Navigator.pushAndRemoveUntil(
       context,
@@ -92,6 +144,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final pendingCount = _pendingApplications.length;
+
     return DefaultTabController(
       length: 3,
       child: Scaffold(
@@ -104,11 +158,18 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
               onPressed: () => _signOut(context),
             ),
           ],
-          bottom: const TabBar(
+          bottom: TabBar(
             tabs: [
-              Tab(icon: Icon(Icons.dashboard_outlined), text: 'Overview'),
-              Tab(icon: Icon(Icons.verified_user_outlined), text: 'Approvals'),
-              Tab(icon: Icon(Icons.storefront_outlined), text: 'All Stalls'),
+              const Tab(icon: Icon(Icons.dashboard_outlined), text: 'Overview'),
+              Tab(
+                icon: Badge(
+                  isLabelVisible: pendingCount > 0,
+                  label: Text('$pendingCount'),
+                  child: const Icon(Icons.verified_user_outlined),
+                ),
+                text: 'Approvals',
+              ),
+              const Tab(icon: Icon(Icons.storefront_outlined), text: 'All Stalls'),
             ],
           ),
         ),
@@ -162,7 +223,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
               ),
               _buildMetricTile(
                 'Pending Approvals',
-                '${pendingRequests.length}',
+                '${_pendingApplications.length}',
                 Icons.pending_actions_rounded,
                 Colors.purple,
               ),
@@ -202,7 +263,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   }
 
   Widget _buildApprovalsTab() {
-    return pendingRequests.isEmpty
+    final pendingList = _pendingApplications;
+
+    return pendingList.isEmpty
         ? const Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -218,98 +281,105 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           )
         : ListView.builder(
             padding: const EdgeInsets.all(16),
-            itemCount: pendingRequests.length,
+            itemCount: pendingList.length,
             itemBuilder: (context, index) {
-              final req = pendingRequests[index];
+              final req = pendingList[index];
+              final verifiedDocs =
+                  req.documentsVerified.values.where((v) => v).length;
+              final totalDocs = req.documentsVerified.length;
+              final allDocsReady = verifiedDocs == totalDocs;
+
               return Card(
                 margin: const EdgeInsets.only(bottom: 12),
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            req.stallName,
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(14),
+                  onTap: () => _openApplicationDetail(req),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Expanded(
+                              child: Text(
+                                req.stallName,
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
                             ),
-                          ),
-                          Text(
-                            req.requestDate,
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey.shade600,
+                            Text(
+                              req.submissionDate,
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey.shade600,
+                              ),
                             ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 4),
-                      Text('Applicant: ${req.applicantName}'),
-                      Text(
-                        'Category: ${req.category}',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey.shade700,
+                          ],
                         ),
-                      ),
-                      const Divider(height: 20),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.end,
-                        children: [
-                          OutlinedButton(
-                            style: OutlinedButton.styleFrom(
-                              foregroundColor: Colors.red,
+                        const SizedBox(height: 4),
+                        Text(
+                          'Applicant: ${req.applicantName} • ${req.proposedStallNumber}',
+                        ),
+                        const SizedBox(height: 4),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              'Category: ${req.requestedCategory}',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey.shade700,
+                              ),
                             ),
-                            onPressed: () {
-                              setState(() {
-                                pendingRequests.removeAt(index);
-                              });
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('Vendor request rejected'),
+                            Row(
+                              children: [
+                                Icon(
+                                  allDocsReady
+                                      ? Icons.verified_rounded
+                                      : Icons.pending_actions,
+                                  size: 14,
+                                  color: allDocsReady
+                                      ? Colors.green
+                                      : Colors.orange,
                                 ),
-                              );
-                            },
-                            child: const Text('Reject'),
-                          ),
-                          const SizedBox(width: 12),
-                          ElevatedButton(
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.green,
-                              foregroundColor: Colors.white,
+                                const SizedBox(width: 4),
+                                Text(
+                                  '$verifiedDocs/$totalDocs Docs Verified',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.bold,
+                                    color: allDocsReady
+                                        ? Colors.green
+                                        : Colors.orange,
+                                  ),
+                                ),
+                              ],
                             ),
-                            onPressed: () {
-                              setState(() {
-                                registeredStalls.add(
-                                  RegisteredStall(
-                                    id: DateTime.now().millisecondsSinceEpoch
-                                        .toString(),
-                                    name: req.stallName,
-                                    ownerName: req.applicantName,
-                                    isActive: true,
-                                    totalOrdersToday: 0,
-                                  ),
-                                );
-                                pendingRequests.removeAt(index);
-                              });
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text(
-                                    '${req.stallName} approved and added to campus stalls!',
-                                  ),
-                                  backgroundColor: Colors.green,
-                                ),
-                              );
-                            },
-                            child: const Text('Approve Stall'),
-                          ),
-                        ],
-                      ),
-                    ],
+                          ],
+                        ),
+                        const Divider(height: 20),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            ElevatedButton.icon(
+                              icon: const Icon(
+                                Icons.fact_check_outlined,
+                                size: 18,
+                              ),
+                              label: const Text('Inspect Documents & Review'),
+                              onPressed: () => _openApplicationDetail(req),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               );
@@ -340,11 +410,11 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
               style: const TextStyle(fontWeight: FontWeight.bold),
             ),
             subtitle: Text(
-              'Owner: ${stall.ownerName} â€¢ Today: ${stall.totalOrdersToday} orders',
+              'Owner: ${stall.ownerName} • Today: ${stall.totalOrdersToday} orders',
             ),
             trailing: Switch(
               value: stall.isActive,
-              activeColor: Colors.green,
+              activeThumbColor: Colors.green,
               onChanged: (val) {
                 setState(() {
                   stall.isActive = val;
