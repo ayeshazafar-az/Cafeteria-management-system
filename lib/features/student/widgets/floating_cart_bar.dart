@@ -27,7 +27,7 @@ class FloatingCartBar extends StatelessWidget {
           0.0,
           (sum, item) => sum + (item.price * item.quantity),
         );
-        final shopName = items.isNotEmpty ? items.first.shopName : '';
+        final shopName = items.isNotEmpty ? items.first.shopName : 'Campus Cafeteria';
 
         return AnimatedSwitcher(
           duration: const Duration(milliseconds: 280),
@@ -61,7 +61,8 @@ class FloatingCartBar extends StatelessWidget {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (context) => const CheckoutScreen(),
+                                  builder: (context) =>
+                                      CheckoutScreen(shopName: shopName),
                                 ),
                               );
                             },
@@ -104,17 +105,16 @@ class FloatingCartBar extends StatelessWidget {
                                         fontSize: 14,
                                       ),
                                     ),
-                                    if (shopName.isNotEmpty)
-                                      Text(
-                                        shopName,
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: TextStyle(
-                                          color: Colors.white
-                                              .withValues(alpha: 0.85),
-                                          fontSize: 11,
-                                        ),
+                                    Text(
+                                      shopName,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: TextStyle(
+                                        color: Colors.white
+                                            .withValues(alpha: 0.85),
+                                        fontSize: 11,
                                       ),
+                                    ),
                                   ],
                                 ),
                               ),

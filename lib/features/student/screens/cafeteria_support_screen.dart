@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+typedef FaqItem = Map<String, String>;
+
 class CafeteriaSupportScreen extends StatefulWidget {
   const CafeteriaSupportScreen({super.key});
 
@@ -21,7 +23,7 @@ class _CafeteriaSupportScreenState extends State<CafeteriaSupportScreen> {
     'App Technical Issue',
   ];
 
-  final List> _faqs = const [
+  final List<FaqItem> _faqs = const [
     {
       'question': 'How long does it take for my order to be prepared?',
       'answer':
@@ -84,7 +86,6 @@ class _CafeteriaSupportScreenState extends State<CafeteriaSupportScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Contact Banner
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
@@ -119,8 +120,6 @@ class _CafeteriaSupportScreenState extends State<CafeteriaSupportScreen> {
               ),
             ),
             const SizedBox(height: 22),
-
-            // FAQs Section
             const Text(
               'Frequently Asked Questions',
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
@@ -157,8 +156,6 @@ class _CafeteriaSupportScreenState extends State<CafeteriaSupportScreen> {
               ),
             ),
             const SizedBox(height: 24),
-
-            // Report an Issue Form
             const Text(
               'Report an Issue',
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),

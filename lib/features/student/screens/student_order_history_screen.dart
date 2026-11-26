@@ -17,28 +17,18 @@ class _StudentOrderHistoryScreenState extends State<StudentOrderHistoryScreen> {
   final Set<String> _ratedOrderIds = {};
 
   Future<void> _openRatingDialog(LocalOrder order) async {
-    final result = await showDialog>(
+    await showDialog(
       context: context,
       builder: (context) => OrderRatingDialog(
         shopName: order.shopName,
-        tokenNumber: order.tokenNumber,
+        orderToken: order.tokenNumber,
       ),
     );
 
     if (!mounted) return;
-    if (result != null) {
-      setState(() {
-        _ratedOrderIds.add(order.id);
-      });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Thanks for rating ${order.shopName} (${result['rating']} ?)!',
-          ),
-          backgroundColor: Colors.green,
-        ),
-      );
-    }
+    setState(() {
+      _ratedOrderIds.add(order.id);
+    });
   }
 
   void _reorderItems(LocalOrder order) {
