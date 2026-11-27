@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../auth/screens/auth_screen.dart';
+import 'vendor_analytics_screen.dart';
 import 'vendor_kds_screen.dart';
 import 'vendor_menu_management_screen.dart';
 import 'vendor_schedule_screen.dart';
@@ -17,6 +18,7 @@ class _VendorMainScreenState extends State<VendorMainScreen> {
   final List<Widget> _screens = const [
     VendorKdsScreen(),
     VendorMenuManagementScreen(),
+    VendorAnalyticsScreen(),
     VendorScheduleScreen(),
   ];
 
@@ -38,7 +40,7 @@ class _VendorMainScreenState extends State<VendorMainScreen> {
       bottomNavigationBar: NavigationBar(
         selectedIndex: _currentIndex,
         onDestinationSelected: (index) {
-          if (index == 3) {
+          if (index == 4) {
             _signOut();
             return;
           }
@@ -53,7 +55,12 @@ class _VendorMainScreenState extends State<VendorMainScreen> {
           NavigationDestination(
             icon: Icon(Icons.restaurant_menu_outlined),
             selectedIcon: Icon(Icons.restaurant_menu_rounded),
-            label: 'Menu & Stock',
+            label: 'Menu',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.bar_chart_outlined),
+            selectedIcon: Icon(Icons.bar_chart_rounded),
+            label: 'Analytics',
           ),
           NavigationDestination(
             icon: Icon(Icons.schedule_outlined),
